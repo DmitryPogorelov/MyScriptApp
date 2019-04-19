@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="AlwaysShowAction">
+    <item
+    android:id="@+id/addnewscript"
+    android:icon="@drawable/ic_add_script"
+    android:orderInCategory="0"
+        app:showAsAction="always"
+    android:title="@string/addnewscript_sign" />
+    <item
+        android:id="@+id/quitApp"
+        android:orderInCategory="99"
+        android:title="@string/quitSign" />
+</menu>
