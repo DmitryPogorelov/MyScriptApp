@@ -5,42 +5,42 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
+import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
-public class MyScriptDBManager {
+class MyScriptDBManager {
 
     private SQLiteDatabase db;
-    private final Context context;
     private MyScriptDB dbHelper;
 
-    public MyScriptDBManager(Context c) {
-        context = c;
+    MyScriptDBManager(Context c) {
         dbHelper = new MyScriptDB(c);
     }
 
     //Открытие БД на запись
-    public void openDBWrite() {
+    private void openDBWrite() {
         db = dbHelper.getWritableDatabase();
     }
 
     //Открытие БД на чтение
-    public void openDBRead() {
+    private void openDBRead() {
         db = dbHelper.getReadableDatabase();
     }
 
     //Закрытие БД
-    public void closeDB() {
+    private void closeDB() {
         db.close();
     }
 
     //Получение списка контактов
-    public List<ScriptRecord> getTasksList() {
+    List<ScriptRecord> getTasksList() {
 
-        List<ScriptRecord> ret_array = new ArrayList<ScriptRecord>();
+        List<ScriptRecord> ret_array = new ArrayList<>();
         openDBRead();
         Cursor cursor = db.rawQuery("SELECT * FROM " + MyScriptDB.TABLE_SCRIPTS + " ORDER BY _id DESC", null);
 
@@ -60,17 +60,17 @@ public class MyScriptDBManager {
                         cursor.getString(finishedDateColumnIndex)));
             }
         }
-
+        if (cursor != null) cursor.close();
         closeDB();
         return ret_array;
     }
 
-    public ScriptRecord getOneScript(int scriptId) {
+    ScriptRecord getOneScript(int scriptId) {
 
-        ScriptRecord ret_script = new ScriptRecord(0,"","", "", 0, "");
+        ScriptRecord ret_script = new ScriptRecord(-1,"","", "", 0, "");
 
         openDBRead();
-        String where = String.format("%s=%d", MyScriptDB.ROW_ID, scriptId); //Указываем id строки для чтения
+        String where = String.format(Locale.US, "%s=%d", MyScriptDB.ROW_ID, scriptId); //Указываем id строки для чтения
         Cursor cursor = db.query(MyScriptDB.TABLE_SCRIPTS, null, where, null, null, null, null);
         if (cursor != null && cursor.getCount() == 1) {
             cursor.moveToFirst();
@@ -87,12 +87,12 @@ public class MyScriptDBManager {
             ret_script.setCreatedDate(cursor.getString(createdDateColumnIndex));
             ret_script.setFinished(cursor.getInt(finishedColumnIndex), cursor.getString(finishedDateColumnIndex));
         }
-
+        if (cursor != null) cursor.close();
         closeDB();
         return ret_script;
     }
 
-    public int insertScript (ScriptRecord sr) {
+    int insertScript (ScriptRecord sr) {
 
         openDBWrite();
 
@@ -101,18 +101,21 @@ public class MyScriptDBManager {
         insert_row.put(MyScriptDB.SCRIPTS_TITLE, sr.getTitle());
         insert_row.put(MyScriptDB.SCRIPTS_CONTENT, sr.getContent());
         //Добавляем текущую дату
-        DateFormat df = new SimpleDateFormat(MyScriptDB.DB_DATETIME_FORMAT);
+        DateFormat df = new SimpleDateFormat(MyScriptDB.DB_DATETIME_FORMAT, Locale.US);
         Calendar calendar = Calendar.getInstance();
         String curr_date = df.format(calendar.getTime());
         insert_row.put(MyScriptDB.SCRIPTS_CREATED_DATE, curr_date);
         insert_row.put(MyScriptDB.SCRIPTS_FINISHED, MyScriptDB.MARK_AS_OPENED);
         insert_row.put(MyScriptDB.SCRIPTS_FINISH_DATE, "");
+
         int result = (int)db.insertOrThrow(MyScriptDB.TABLE_SCRIPTS, null, insert_row);
+
         closeDB();
+
         return result;
     }
 
-    public int updateScript(ScriptRecord sr) {
+    int updateScript(ScriptRecord sr) {
         openDBWrite(); //Открываем БД на запись
 
         ContentValues update_row = new ContentValues(2); //Создаем строку со значениями для обновления
@@ -120,20 +123,183 @@ public class MyScriptDBManager {
         update_row.put(MyScriptDB.SCRIPTS_TITLE, sr.getTitle());
         update_row.put(MyScriptDB.SCRIPTS_CONTENT, sr.getContent());
 
-        String where = String.format("%s=%d", MyScriptDB.ROW_ID, sr.getRowId()); //Указываем id строки для обновления
+        String where = String.format(Locale.US, "%s=%d", MyScriptDB.ROW_ID, sr.getRowId()); //Указываем id строки для обновления
 
         int result = db.update(MyScriptDB.TABLE_SCRIPTS, update_row, where, null);
         closeDB();
         return result;
     }
 
-    public int deleteScript (int rowId) {
-        openDBWrite();
+    int deleteScript (int rowId) {
 
-        String where = String.format("%s=%d", MyScriptDB.ROW_ID, rowId);
+        deletePictureRecordByScriptId(rowId);
+
+        openDBWrite();
+        String where = String.format(Locale.US, "%s=%d", MyScriptDB.ROW_ID, rowId);
         int result = db.delete(MyScriptDB.TABLE_SCRIPTS, where, null);
         closeDB();
 
         return result;
+    }
+
+    //Добавляем запись о месте хранения фотографии
+    int insertPictureRecord (int scriptId, String filePath, String fileName) {
+        openDBWrite();
+
+        ContentValues insert_row = new ContentValues(4);
+
+        insert_row.put(MyScriptDB.PICTURES_SCRIPT_ID, scriptId);
+        insert_row.put(MyScriptDB.PICTURES_PICTURE_PATH, filePath);
+        insert_row.put(MyScriptDB.PICTURES_PICTURE_FILENAME, fileName);
+
+        //Добавляем текущую дату
+        DateFormat df = new SimpleDateFormat(MyScriptDB.DB_DATETIME_FORMAT, Locale.US);
+        Calendar calendar = Calendar.getInstance();
+        String curr_date = df.format(calendar.getTime());
+        insert_row.put(MyScriptDB.PICTURES_CREATED_DATE, curr_date);
+        int result = (int)db.insertOrThrow(MyScriptDB.TABLE_PICTURES, null, insert_row);
+        closeDB();
+        return result;
+    }
+
+    //Функция возвращает массив фоток одной записи
+    List<PictureRecord> getOneScriptPictures(int scriptId) {
+
+        List<PictureRecord> ret_array = new ArrayList<>();
+
+        if (scriptId > 0) {
+
+            openDBRead();
+            Cursor cursor = db.rawQuery("SELECT * FROM " + MyScriptDB.TABLE_PICTURES + " WHERE "
+                    + MyScriptDB.PICTURES_SCRIPT_ID + " = " + scriptId + " ORDER BY _id ASC", null);
+
+            if (cursor != null && cursor.getCount() > 0) {
+
+                int idColumnIndex = cursor.getColumnIndex(MyScriptDB.ROW_ID);
+                int scriptIdColumnIndex = cursor.getColumnIndex(MyScriptDB.PICTURES_SCRIPT_ID);
+                int picturePathColumnIndex = cursor.getColumnIndex(MyScriptDB.PICTURES_PICTURE_PATH);
+                int pictureFilenameColumnIndex = cursor.getColumnIndex(MyScriptDB.PICTURES_PICTURE_FILENAME);
+                int pictureCreatedDateColumnIndex = cursor.getColumnIndex(MyScriptDB.PICTURES_CREATED_DATE);
+
+                while (cursor.moveToNext()) {
+                    // Используем индекс для получения строки или числа
+                    ret_array.add(new PictureRecord(cursor.getInt(idColumnIndex), cursor.getInt(scriptIdColumnIndex),
+                            cursor.getString(picturePathColumnIndex), cursor.getString(pictureFilenameColumnIndex), cursor.getString(pictureCreatedDateColumnIndex)));
+                }
+            }
+            if (cursor != null) cursor.close();
+            closeDB();
+        }
+        return ret_array;
+    }
+
+    //Функция возвращает одну картинку по id
+    PictureRecord getOnePicture(int pictureId) {
+
+        PictureRecord ret_record = new PictureRecord(-1, -1, "", "", "");
+
+        openDBRead();
+
+        Cursor cursor = db.rawQuery("SELECT * FROM " + MyScriptDB.TABLE_PICTURES + " WHERE "
+                + MyScriptDB.ROW_ID + " = " + pictureId + " ORDER BY _id DESC", null);
+
+        if (cursor != null && cursor.getCount() == 1) {
+
+            int idColumnIndex = cursor.getColumnIndex(MyScriptDB.ROW_ID);
+            int scriptIdColumnIndex = cursor.getColumnIndex(MyScriptDB.PICTURES_SCRIPT_ID);
+            int picturePathColumnIndex = cursor.getColumnIndex(MyScriptDB.PICTURES_PICTURE_PATH);
+            int pictureFilenameColumnIndex = cursor.getColumnIndex(MyScriptDB.PICTURES_PICTURE_FILENAME);
+            int pictureCreatedDateColumnIndex = cursor.getColumnIndex(MyScriptDB.PICTURES_CREATED_DATE);
+
+            cursor.moveToFirst();
+
+            // Используем индекс для получения строки или числа
+            ret_record.setRowId(cursor.getInt(idColumnIndex));
+            ret_record.setScriptId(cursor.getInt(scriptIdColumnIndex));
+            ret_record.setPicturePath(cursor.getString(picturePathColumnIndex));
+            ret_record.setPictureName(cursor.getString(pictureFilenameColumnIndex));
+            ret_record.setCreatedDate(cursor.getString(pictureCreatedDateColumnIndex));
+        }
+        if (cursor != null) cursor.close();
+        closeDB();
+        return ret_record;
+    }
+
+
+    //Удаляем картинку из БД - конкретную картинку по id картинки
+    int deletePictureRecordByPictId (int pictureId) {
+
+        boolean fileDelResult = false;
+        int dbRecDeleteResult = -1;
+
+        PictureRecord picToDelete = this.getOnePicture(pictureId);
+
+        if (picToDelete.getRowId() > 0) {
+            //Удаляем файл с картинкой
+            fileDelResult = this.fileDelete(picToDelete.getPicturePath() + "/" + picToDelete.getPictureName());
+        }
+
+        if (fileDelResult) {
+            //Вносим изменения в базу
+            openDBWrite();
+            String where = String.format(Locale.US, "%s=%d", MyScriptDB.ROW_ID, pictureId);
+            dbRecDeleteResult = db.delete(MyScriptDB.TABLE_PICTURES, where, null);
+            closeDB();
+        }
+
+        return dbRecDeleteResult;
+    }
+
+    //Удаляем картинки из БД - ВСЕ картинки, принадлежащие конкретной задаче
+    //Функция возвращает количество удаленных строк
+    private int deletePictureRecordByScriptId(int scriptId) {
+        int result = 0;
+        int eachRowResult;
+
+        List<PictureRecord> listToDel = getOneScriptPictures(scriptId);
+
+        if (listToDel.size() > 0) {
+            for (int i = 0; i < listToDel.size(); i++) {
+                eachRowResult = deletePictureRecordByPictId(listToDel.get(i).getRowId());
+                if (eachRowResult == 1)
+                    result++;
+            }
+        }
+        return result;
+    }
+
+    //Функция удаляет файл. Возвращает true, если файл удален успешно. false, если при удалении
+    //появилась ошибка
+    private boolean fileDelete(String path) {
+        boolean fileDeleteResult = true;
+
+        File imgFile = new File(path);
+
+        if (imgFile.exists()) {
+            try {
+                fileDeleteResult = imgFile.delete();
+            }
+            catch (SecurityException se) {
+                 return false;
+            }
+        }
+        return fileDeleteResult;
+    }
+
+    //Функция извлекает название задачи по id картинки для заголовка окна просмотра фоток
+    String getTaskNameByPictId (int pictId) {
+        String taskName = "";
+        PictureRecord pictRec;
+        ScriptRecord script;
+
+        pictRec = this.getOnePicture(pictId);
+        if (pictRec != null) {
+            script = this.getOneScript(pictRec.getScriptId());
+
+            if (script != null)
+                taskName = script.getTitle();
+        }
+
+        return taskName;
     }
 }

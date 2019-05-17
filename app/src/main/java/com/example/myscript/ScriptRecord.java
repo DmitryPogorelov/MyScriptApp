@@ -9,16 +9,16 @@ public class ScriptRecord {
     private int finished;
     private String finish_date;
 
-    public ScriptRecord(int row_id, String title, String content) {
+    ScriptRecord(int row_id, String title, String content) {
         this.row_id         = row_id;
         this.script_title   = title;
         this.script_content = content;
         this.created_date   = MyScriptDB.DEFAULT_DATE_STRING;
         this.finished       = MyScriptDB.MARK_AS_OPENED;
-        this.finish_date    = MyScriptDB.DEFAULT_DATE_STRING;
+        this.finish_date    = "";
     }
 
-    public ScriptRecord(int row_id, String title, String content, String created_date, int finished, String finish_date) {
+    ScriptRecord(int row_id, String title, String content, String created_date, int finished, String finish_date) {
         this.row_id         = row_id;
         this.script_title   = title;
         this.script_content = content;
@@ -27,10 +27,10 @@ public class ScriptRecord {
         this.finish_date    = finish_date;
     }
 
-    public int getRowId() {return row_id;}
-    public String getTitle() {return script_title;}
+    int getRowId() {return row_id;}
+    String getTitle() {return script_title;}
     public String getContent() {return script_content;}
-    public String getCreatedDate() {return created_date;}
+    String getCreatedDate() {return created_date;}
     public int getFinished() {return finished;}
     public String getFinishDate() {return finish_date;}
 

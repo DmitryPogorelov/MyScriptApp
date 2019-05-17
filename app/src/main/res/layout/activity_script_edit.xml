@@ -1,53 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".ScriptEdit"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".ScriptEdit">
+    android:layout_height="match_parent">
 
     <LinearLayout
+        android:id="@+id/script_edit_main_layout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="8dp"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <fragment
+            android:id="@+id/dynamic_fragment_frame_layout"
+            android:name="com.example.myscript.pictures_viewer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_gravity="center"/>
 
         <EditText
             android:id="@+id/et_script_title"
-            style="@style/script_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:contentDescription="@string/headerHint"
-            android:inputType="textPersonName"
-            android:paddingBottom="10dp"
+            android:inputType="textMultiLine"
+            android:autofillHints="TASK_HEADER"
+            android:importantForAutofill="yes"
             android:text="" />
 
         <EditText
             android:id="@+id/et_script_content"
-            style="@style/scriptContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:contentDescription="@string/contentHint"
-            android:ems="10"
+            android:importantForAutofill="no"
             android:inputType="textMultiLine"
             android:singleLine="false" />
 
         <LinearLayout
-            android:id="@+id/script_edit_buttons"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingTop="10dp">
+            android:orientation="horizontal">
 
             <Button
                 android:id="@+id/saveAndAddButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:layout_weight="1"
                 style="?android:attr/buttonBarButtonStyle"
                 android:text="@string/saveAndAddButtonText" />
@@ -56,11 +59,12 @@
                 android:id="@+id/saveButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
                 android:layout_weight="1"
                 style="?android:attr/buttonBarButtonStyle"
                 android:text="@string/save_button" />
-
-
         </LinearLayout>
+
     </LinearLayout>
-</android.support.constraint.ConstraintLayout>
+</ScrollView>

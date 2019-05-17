@@ -19,6 +19,8 @@
     <string name="emptyRecordWarning">Невозможно сохранить пустую запись!</string>
     <string name="errorInIsert">Не удалось добавить запись в БД!</string>
     <string name="deviceHasNoCameraError">В устройстве отсутствует камера!</string>
+    <string name="photoNotAddedToDBError">Фото не добавлено в БД</string>
+    <string name="fileNotCopied">Не удалось скопировать файл!</string>
 
     //Строки меню главного экрана
     <string name="addnewscript_sign">Добавить</string>
@@ -32,4 +34,12 @@
     <string name="camera_view_hidden_button">Скрытая кнопка</string>
     <string name="camera_view_shoot_button">Сделать фото</string>
     <string name="camera_view_return_button">Вернуться в редактор</string>
+    <string name="picture_display_imageView">Картинка на весь экран</string>
+    <string name="picture_holder">Картинка из задачи</string>
+
+    //Строки меню PictureDisplay
+    <string name="delete_photo">Удалить изображение</string>
+    <string name="sureToDeletePhoto">Удалить это изображение?</string>
+    <string name="sureToDeletePhotoYes">Да!</string>
+    <string name="sureToDeletePhotoNo">Нет!</string>
 </resources>

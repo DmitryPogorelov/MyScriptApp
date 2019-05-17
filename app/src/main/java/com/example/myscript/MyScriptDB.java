@@ -7,29 +7,45 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class MyScriptDB extends SQLiteOpenHelper {
 
-    public static final String DB_MYSCRIPT = "myscript_db.db";
-    public static final Integer DB_VERSION = 2;
-    public static final String TABLE_SCRIPTS = "scripts";
+    private static final String DB_MYSCRIPT = "myscript_db.db";
+    private static final Integer DB_VERSION = 3;
 
-    public static final String ROW_ID = "_id";
-    public static final String SCRIPTS_TITLE = "title";
-    public static final String SCRIPTS_CONTENT = "content";
-    public static final String SCRIPTS_CREATED_DATE = "createddate";
-    public static final String SCRIPTS_FINISHED = "finished";
-    public static final String SCRIPTS_FINISH_DATE = "finishdate";
+    //Таблица scripts - в ней хранятся основные записи задач
+    static final String TABLE_SCRIPTS = "scripts";
 
-    public static final String DB_DATETIME_FORMAT = "dd.MM.yyyy kk:mm";
+    static final String ROW_ID = "_id";
+    static final String SCRIPTS_TITLE = "title";
+    static final String SCRIPTS_CONTENT = "content";
+    static final String SCRIPTS_CREATED_DATE = "createddate";
+    static final String SCRIPTS_FINISHED = "finished";
+    static final String SCRIPTS_FINISH_DATE = "finishdate";
 
-    public static final Integer MARK_AS_FINISHED = 1;
-    public static final Integer MARK_AS_OPENED = 0;
+    //Таблица pictures - в ней хранятся записи о картинках (фото или из галлереи, которые
+    // прикреплены к задачам
+    static final String TABLE_PICTURES = "pictures";
+    //public static final String ROW_ID = "_id"; - Не задаем повторно, т.к. константа уже объявлена,
+    // но этот столбец есть в таблице
+    static final String PICTURES_SCRIPT_ID = "script_id";
+    static final String PICTURES_PICTURE_PATH = "picture_path";
+    static final String PICTURES_PICTURE_FILENAME = "picture_filename";
+    static final String PICTURES_CREATED_DATE = "createddate";
 
-    public static final String DEFAULT_DATE_STRING = "01.01.2010 00:00";
 
-    private Context con_var;
+    static final String DB_DATETIME_FORMAT;
 
-    public MyScriptDB(Context con) {
+    static {
+        DB_DATETIME_FORMAT = "dd.MM.yyyy kk:mm";
+    }
+
+    //public static final Integer MARK_AS_FINISHED = 1;
+    static final Integer MARK_AS_OPENED = 0;
+
+    static final String DEFAULT_DATE_STRING = "01.01.2010 00:00";
+    static final int EMPTY_ROW_ID = 0;
+
+    MyScriptDB(Context con) {
         super(con, DB_MYSCRIPT, null, DB_VERSION);
-        this.con_var = con;
+        Context con_var = con;
     }
 
     @Override
@@ -42,6 +58,14 @@ public class MyScriptDB extends SQLiteOpenHelper {
                 + SCRIPTS_FINISHED + " INTEGER, "
                 + SCRIPTS_FINISH_DATE + " TEXT);"
 
+        );
+
+        db.execSQL("CREATE TABLE " + TABLE_PICTURES
+                + " (_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + PICTURES_SCRIPT_ID + " INTEGER, "
+                + PICTURES_PICTURE_PATH + " TEXT, "
+                + PICTURES_PICTURE_FILENAME + " TEXT, "
+                + PICTURES_CREATED_DATE + " TEXT);"
         );
 
         // Вставляем тестовые данные
@@ -62,6 +86,15 @@ public class MyScriptDB extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + TABLE_SCRIPTS + " ADD COLUMN " + SCRIPTS_CREATED_DATE + " TEXT;");
             db.execSQL("ALTER TABLE " + TABLE_SCRIPTS + " ADD COLUMN " + SCRIPTS_FINISHED + " INTEGER;");
             db.execSQL("ALTER TABLE " + TABLE_SCRIPTS + " ADD COLUMN " + SCRIPTS_FINISH_DATE + " TEXT;");
+        }
+        if (oldVersion < 3) {
+            db.execSQL("CREATE TABLE " + TABLE_PICTURES
+                    + " (_id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                    + PICTURES_SCRIPT_ID + " INTEGER, "
+                    + PICTURES_PICTURE_PATH + " TEXT, "
+                    + PICTURES_PICTURE_FILENAME + " TEXT, "
+                    + PICTURES_CREATED_DATE + " TEXT);"
+            );
         }
     }
 }

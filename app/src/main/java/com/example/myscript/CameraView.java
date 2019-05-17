@@ -49,15 +49,13 @@ public class CameraView extends AppCompatActivity {
     Handler backgroundHandler;
 
     private TextureView currTextureView;
-    private ImageButton btnCamShoot, btnReturn;
 
     //Название папки для сохранения файлов
     private File galleryFolder;
     private String fullFileName;
-    private String fullFileNameWithPath;
 
-    //Константа-название передаваемого пути файла
-    public static final String PICTURE_NAME = "picture_name";
+    //Константа-название данного Активити
+    public static final String NAME_INTENT_CAMERAVIEW = "intent_CameraView";
 
     //Переменная для хранения row_id, который пришел из формы редактирования
     private int rowToUpdate = -1;
@@ -67,17 +65,39 @@ public class CameraView extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera_view);
+
         //Убираем ActionBar
         ActionBar currActionBar = getSupportActionBar();
-        currActionBar.hide();
+
+        if (currActionBar != null)
+            currActionBar.hide();
+
+
         //Привязываем переменные к элементам
         currTextureView = findViewById(R.id.camTextureView);
-        btnCamShoot = findViewById(R.id.btnCamShoot);
-        btnReturn = findViewById(R.id.btnReturn);
+        ImageButton btnCamShoot = findViewById(R.id.btnCamShoot);
+        ImageButton btnReturn = findViewById(R.id.btnReturn);
 
         //Привязываем ClickListenerы
         btnReturn.setOnClickListener(returnButtonClkListener);
         btnCamShoot.setOnClickListener(shootButtonClkListener);
+
+        //Разбираем входящие параметры формы
+        Bundle varSet = getIntent().getExtras();
+
+        //Если был переход из формы редактирования, то восстанавливаем переменную с ROW_ID
+        if (varSet != null && varSet.containsKey(MyScriptDB.ROW_ID))
+            rowToUpdate = varSet.getInt(MyScriptDB.ROW_ID);
+
+        if (varSet != null && varSet.containsKey(ScriptEdit.TITLE_FIELD_CONTENT))
+            fieldTitle = varSet.getString(ScriptEdit.TITLE_FIELD_CONTENT);
+        else
+            fieldTitle = "";
+
+        if (varSet != null && varSet.containsKey(ScriptEdit.CONTENT_FIELD_CONTENT))
+            fieldContent = varSet.getString(ScriptEdit.CONTENT_FIELD_CONTENT);
+        else
+            fieldContent = "";
 
         //Создаем папку для фотографий
         createImageGallery();
@@ -118,6 +138,7 @@ public class CameraView extends AppCompatActivity {
             for (String cameraId : camManager.getCameraIdList()) {
                 CameraCharacteristics cameraCharacteristics =
                         camManager.getCameraCharacteristics(cameraId);
+
                 if (cameraCharacteristics.get(CameraCharacteristics.LENS_FACING) ==
                         cameraFacing) {
                     StreamConfigurationMap streamConfigurationMap = cameraCharacteristics.get(
@@ -209,7 +230,8 @@ public class CameraView extends AppCompatActivity {
     private View.OnClickListener returnButtonClkListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            finish();
+
+            backToScriptEditActivity();
         }
     };
 
@@ -217,34 +239,9 @@ public class CameraView extends AppCompatActivity {
     private View.OnClickListener shootButtonClkListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
+
             onTakePhotoButtonClicked();
-
-
-            Bundle varSet = getIntent().getExtras();
-
-            //Если был переход из формы редактирования, то восстанавливаем переменную с ROW_ID
-            if (varSet != null && varSet.containsKey(MyScriptDB.ROW_ID))
-                rowToUpdate = varSet.getInt(MyScriptDB.ROW_ID);
-
-            if (varSet != null && varSet.containsKey(ScriptEdit.TITLE_FIELD_CONTENT))
-                fieldTitle = varSet.getString(ScriptEdit.TITLE_FIELD_CONTENT);
-
-            if (varSet != null && varSet.containsKey(ScriptEdit.CONTENT_FIELD_CONTENT))
-                fieldContent = varSet.getString(ScriptEdit.CONTENT_FIELD_CONTENT);
-
-            Intent intent = new Intent();
-            intent.setClass(getApplicationContext(), ScriptEdit.class);
-
-            //Сохраняем в новый Intent все нужные значения
-            if (rowToUpdate > -1)
-                intent.putExtra(MyScriptDB.ROW_ID, rowToUpdate);
-
-            intent.putExtra(ScriptEdit.TITLE_FIELD_CONTENT, fieldTitle);
-            intent.putExtra(ScriptEdit.CONTENT_FIELD_CONTENT, fieldContent);
-
-            intent.putExtra(PICTURE_NAME, fullFileNameWithPath);
-
-            startActivity(intent);
+            backToScriptEditActivity();
         }
     };
 
@@ -296,21 +293,45 @@ public class CameraView extends AppCompatActivity {
         }
     }
 
-    private File createImageFile(File galleryFolder) throws IOException {
+    private File createImageFile(File galleryFolder) {
+
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         String imageFileName = "image_" + timeStamp;
-        fullFileName = imageFileName + ".png";
-        return File.createTempFile(imageFileName, ".png", galleryFolder);
+        fullFileName = imageFileName + ".jpg";
+        String mPath = galleryFolder.getAbsolutePath() + "/" + fullFileName;
+
+        return new File(mPath);
     }
 
     public void onTakePhotoButtonClicked() {
         //lock();
         FileOutputStream outputPhoto = null;
+
         try {
             outputPhoto = new FileOutputStream(createImageFile(galleryFolder));
-            boolean res = currTextureView.getBitmap().compress(Bitmap.CompressFormat.PNG, 100, outputPhoto);
-            if (res)
-                fullFileNameWithPath = galleryFolder.getAbsolutePath() + "/" + fullFileName;
+
+            boolean res = currTextureView.getBitmap().compress(Bitmap.CompressFormat.JPEG, 75, outputPhoto);
+            if (res) {
+
+                String fullFilePath = galleryFolder.getAbsolutePath();
+
+                //Инициализируем базу для работы с ней
+                //Менеджер БД
+                MyScriptDBManager myDB = new MyScriptDBManager(getApplicationContext());
+
+                //Создаем новую задачу в БД, если ее не было
+                if (rowToUpdate == -1) {
+                    ScriptRecord newRec = new ScriptRecord(MyScriptDB.EMPTY_ROW_ID, fieldTitle, fieldContent);
+                    rowToUpdate = myDB.insertScript(newRec);
+                }
+
+                if (rowToUpdate > 0) {
+                    //Добавляем картинку к задаче
+                    int pictureRecId = myDB.insertPictureRecord (rowToUpdate, fullFilePath, fullFileName);
+                    if (pictureRecId == -1)
+                        Toast.makeText(this, getResources().getString(R.string.photoNotAddedToDBError), Toast.LENGTH_LONG).show();
+                }
+            }
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -319,6 +340,7 @@ public class CameraView extends AppCompatActivity {
             //unlock();
             try {
                 if (outputPhoto != null) {
+                    outputPhoto.flush();
                     outputPhoto.close();
                 }
             } catch (IOException e) {
@@ -341,5 +363,28 @@ public class CameraView extends AppCompatActivity {
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
+    }
+
+    //Перехват нажатия кнопки Back
+    @Override
+    public void onBackPressed() {
+        backToScriptEditActivity();
+    }
+
+    //Создаем новый Intent и возвращаемся в ScriptEdit Activity
+    private void backToScriptEditActivity() {
+
+        Intent intent = new Intent();
+        intent.setClass(getApplicationContext(), ScriptEdit.class);
+
+        //Сохраняем в новый Intent все нужные значения
+        if (rowToUpdate > -1)
+            intent.putExtra(MyScriptDB.ROW_ID, rowToUpdate);
+
+        intent.putExtra(ScriptEdit.TITLE_FIELD_CONTENT, fieldTitle);
+        intent.putExtra(ScriptEdit.CONTENT_FIELD_CONTENT, fieldContent);
+        intent.putExtra(MainActivity.CALLER_ACTIVITY_NAME, NAME_INTENT_CAMERAVIEW);
+        startActivity(intent);
+        finish();
     }
 }

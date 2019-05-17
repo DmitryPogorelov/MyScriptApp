@@ -1,39 +1,26 @@
 package com.example.myscript;
 
-import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.LayerDrawable;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.TextView;
-import android.widget.Toast;
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-
     public MyRecViewAdapter curr_adapter;
-    private RecyclerView.LayoutManager layoutManager;
 
-    private ActionMode actionMode; //Переменная для вызова меню
-
-    private List<ScriptRecord> test_data = new ArrayList<ScriptRecord>();
+    private List<ScriptRecord> test_data = new ArrayList<>();
 
     private MyScriptDBManager myDB;
-
+    public static final String CALLER_ACTIVITY_NAME = "caller_activity_name";
+    public static final String NAME_INTENT_MAINACTIVITY = "intent_MainActivity";
     /**/
     public RecyclerView recyclerView;
     /**/
@@ -57,7 +44,8 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onDestroyActionMode(ActionMode mode) {
-            actionMode = null;
+            //Переменная для вызова меню
+            ActionMode actionMode = null;
         }
     };
 
@@ -68,12 +56,13 @@ public class MainActivity extends AppCompatActivity {
 
         //Заводим ActionBar, чтобы на нем была стрелка назад
         ActionBar currActionBar = getSupportActionBar();
-        currActionBar.setTitle(R.string.mainActivitySign);
+        if (currActionBar != null)
+            currActionBar.setTitle(R.string.mainActivitySign);
 
-        recyclerView = (RecyclerView) findViewById(R.id.task_list);
+        recyclerView = findViewById(R.id.task_list);
 
         // use a linear layout manager
-        layoutManager = new LinearLayoutManager(this);
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
 
         //Извлекаем данные из БД
@@ -100,6 +89,7 @@ public class MainActivity extends AppCompatActivity {
             case R.id.addnewscript:
                 Intent intent = new Intent();
                 intent.setClass(getApplicationContext(), ScriptEdit.class);
+                intent.putExtra(MainActivity.CALLER_ACTIVITY_NAME, MainActivity.NAME_INTENT_MAINACTIVITY);
                 startActivity(intent);
                 break;
             case R.id.quitApp:
