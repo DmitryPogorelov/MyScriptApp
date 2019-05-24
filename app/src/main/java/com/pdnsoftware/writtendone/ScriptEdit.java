@@ -1,17 +1,21 @@
-package com.example.myscript;
+package com.pdnsoftware.writtendone;
 
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import androidx.exifinterface.media.ExifInterface;
+import android.media.ThumbnailUtils;
 import android.os.Environment;
-import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.ActionMode;
 import android.view.Menu;
@@ -61,6 +65,13 @@ public class ScriptEdit extends AppCompatActivity {
     //Константа для журнала
     private static final String TAG = "MyScript-ScriptEditAct";
 
+    //Переменная для управления ActionBarом
+    private ActionBar currActionBar;
+
+    //Переменная для установки отступов между картинками
+    int paddingDp = 4;
+    int paddingPixel = 0;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -76,14 +87,24 @@ public class ScriptEdit extends AppCompatActivity {
         etScriptTitle = findViewById(R.id.et_script_title);
         etScriptContent = findViewById(R.id.et_script_content);
 
+        etScriptTitle.addTextChangedListener(castFirstLetter);
+        etScriptContent.addTextChangedListener(castFirstLetter);
+
         saveButton = findViewById(R.id.saveButton);
         saveAndAddButton = findViewById(R.id.saveAndAddButton);
 
         saveButton.setOnClickListener(seSaver);
         saveAndAddButton.setOnClickListener(seSaver);
 
+        //Проверяем, не надо ли восстановить переменные из сохраненного перед уничтожением Активити массива
+        if (savedInstanceState != null) {
+            rowToUpdate = savedInstanceState.getInt(MyScriptDB.ROW_ID);
+            etScriptTitle.setText(savedInstanceState.getString(ScriptEdit.TITLE_FIELD_CONTENT));
+            etScriptContent.setText(savedInstanceState.getString(ScriptEdit.CONTENT_FIELD_CONTENT));
+        }
+
         //Заводим ActionBar, чтобы на нем была стрелка назад
-        ActionBar currActionBar = getSupportActionBar();
+        currActionBar = getSupportActionBar();
 
         if (currActionBar != null) {
             currActionBar.setDisplayHomeAsUpEnabled(true);
@@ -103,8 +124,6 @@ public class ScriptEdit extends AppCompatActivity {
 
             //Делаем кнопку "Сохранить и добавить еще невидимой"
             saveAndAddButton.setVisibility(View.INVISIBLE);
-
-
         }
         else
         {
@@ -114,7 +133,11 @@ public class ScriptEdit extends AppCompatActivity {
 
         //Если произшел возврат из экрана с камерой
         if (varSet != null && varSet.containsKey(MainActivity.CALLER_ACTIVITY_NAME)) {
-            if (varSet.getString(MainActivity.CALLER_ACTIVITY_NAME).equals(CameraView.NAME_INTENT_CAMERAVIEW)) {
+
+            String tempActivityName = "";
+            tempActivityName = varSet.getString(MainActivity.CALLER_ACTIVITY_NAME);
+
+            if (tempActivityName.equals(CameraView.NAME_INTENT_CAMERAVIEW)) {
                 //Восстановить значение полей
                 if (varSet.containsKey(ScriptEdit.TITLE_FIELD_CONTENT))
                     etScriptTitle.setText(varSet.getString(ScriptEdit.TITLE_FIELD_CONTENT));
@@ -124,18 +147,8 @@ public class ScriptEdit extends AppCompatActivity {
             }
         }
 
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-
-
         //Загружаем фотографии
-        if (rowToUpdate > 0)
-            picturesLoad(rowToUpdate);
-
-        Log.i(TAG, "On Resume DONE!");
+        picturesLoad(rowToUpdate);
     }
 
     private View.OnClickListener seSaver = new View.OnClickListener() {
@@ -144,7 +157,7 @@ public class ScriptEdit extends AppCompatActivity {
             switch (v.getId()) {
                 case R.id.saveButton:
 
-                    if (varSet != null && varSet.containsKey(MyScriptDB.ROW_ID)) {
+                    if (rowToUpdate > 0) {
                         ScriptRecord script = new ScriptRecord(rowToUpdate, etScriptTitle.getText().toString(), etScriptContent.getText().toString());
                         //Проверяем запись на пустоту
                         if (isEmptyScriptRecord(script)) {
@@ -158,7 +171,7 @@ public class ScriptEdit extends AppCompatActivity {
                         }
                     }
 
-                    if (varSet != null && !varSet.containsKey(MyScriptDB.ROW_ID)) {
+                    if (rowToUpdate <= 0) {
                         ScriptRecord script = new ScriptRecord(0, etScriptTitle.getText().toString(), etScriptContent.getText().toString());
                         //Проверяем запись на пустоту
                         if (isEmptyScriptRecord(script)) {
@@ -193,6 +206,8 @@ public class ScriptEdit extends AppCompatActivity {
                         //Оповещаем пользователя об успешном сохранении данных
                         Toast.makeText(ScriptEdit.this, v.getResources().getString(R.string.recordAddedSuccess), Toast.LENGTH_LONG).show();
                         //Очищаем поля
+                        rowToUpdate = -1;
+                        picturesLoad(rowToUpdate);
                         etScriptTitle.setText("");
                         etScriptContent.setText("");
                     }
@@ -242,12 +257,25 @@ public class ScriptEdit extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+        boolean allowedToAddPicture = false;
+
         switch (item.getItemId()) {
             case R.id.add_photo:
+                //Проверяем количество картинок в записи
+                allowedToAddPicture = false;
+                //Если rowToUpdate < 0 - значит запись новая и всё Ок
+                if (rowToUpdate <= 0)
+                    allowedToAddPicture = true;
+                if (rowToUpdate > 0) {
+                    int pictCount = myDB.picturesCounter(rowToUpdate);
+                    if (pictCount < 3)
+                        allowedToAddPicture = true;
+                }
+
                 //Проверяем наличие в устройстве камеры
                 PackageManager pm = app_context.getPackageManager();
                 final boolean deviceHasCameraFlag = pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY);
-                if (deviceHasCameraFlag) {
+                if (deviceHasCameraFlag && allowedToAddPicture) {
                     //Открываем Activity  с камерой
                     Intent cameraIntent = new Intent();
 
@@ -263,19 +291,36 @@ public class ScriptEdit extends AppCompatActivity {
                     startActivity(cameraIntent);
                 }
                 else {
-                    Toast.makeText(app_context, getResources().getString(R.string.deviceHasNoCameraError), Toast.LENGTH_SHORT).show();
+                    if (!deviceHasCameraFlag)
+                        Toast.makeText(app_context, getResources().getString(R.string.deviceHasNoCameraError), Toast.LENGTH_LONG).show();
+                    if (!allowedToAddPicture)
+                        Toast.makeText(app_context, getResources().getString(R.string.tooMatchPictures), Toast.LENGTH_LONG).show();
                 }
 
                 break;
             case R.id.add_picture:
-                //Зарускаем галлерею
-                Intent intGallery = new Intent();
+                //Проверяем количество картинок в записи
+                //Если rowToUpdate < 0 - значит запись новая и всё Ок
+                if (rowToUpdate <= 0)
+                    allowedToAddPicture = true;
+                if (rowToUpdate > 0) {
+                    int pictCount = myDB.picturesCounter(rowToUpdate);
+                    if (pictCount < 3)
+                        allowedToAddPicture = true;
+                }
 
-                intGallery.setType("image/*");
-                intGallery.setAction(Intent.ACTION_GET_CONTENT);
+                if (allowedToAddPicture) {
+                    //Зарускаем галлерею
+                    Intent intGallery = new Intent();
 
-                startActivityForResult(Intent.createChooser(intGallery, "Select Picture"), RESULT_LOAD_IMAGE);
+                    intGallery.setType("image/*");
+                    intGallery.setAction(Intent.ACTION_GET_CONTENT);
 
+                    startActivityForResult(Intent.createChooser(intGallery, "Select Picture"), RESULT_LOAD_IMAGE);
+                }
+                else {
+                    Toast.makeText(app_context, getResources().getString(R.string.tooMatchPictures), Toast.LENGTH_LONG).show();
+                }
                 break;
 
             case android.R.id.home:
@@ -289,33 +334,30 @@ public class ScriptEdit extends AppCompatActivity {
 
     public void picturesLoad (int rowId) {
 
-        //Загрузить фотографии
-        List<PictureRecord> recPictures = myDB.getOneScriptPictures(rowId);
-
         pictures_viewer fragment;
-        //Добавляем фрагмент для размещения картинок
-        Fragment pictFragment = new pictures_viewer();
 
         // First get FragmentManager object.
         FragmentManager fragmentManager = this.getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction;
 
-        // Begin Fragment transaction.
-        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
-        // Replace the layout holder with the required Fragment object.
-        fragmentTransaction.add(R.id.dynamic_fragment_frame_layout, pictFragment);
-
-        // Commit the Fragment replace action.
-        fragmentTransaction.commit();
+        //Загрузить фотографии
+        List<PictureRecord> recPictures = myDB.getOneScriptPictures(rowId);
 
         if (recPictures.size() > 0) {
 
-            Bitmap myBitmap1, myBitmap2, myBitmap3;
+            Bitmap myBitmap1, myBitmap2, myBitmap3, freshBitmap1, freshBitmap2, freshBitmap3;
             File imgFile;
             String pictPath;
             //Setting bitmap options to avoid missing of memory
             BitmapFactory.Options options = new BitmapFactory.Options();
             options.inSampleSize = 8;
+
+            freshBitmap1 = null;
+            freshBitmap2 = null;
+            freshBitmap3 = null;
+
+            int orientation;
+            ExifInterface exifObject;
 
             //Инициализируем массив для хранения идентификаторов фотографий
             addedPictIds = new int[3];
@@ -327,9 +369,35 @@ public class ScriptEdit extends AppCompatActivity {
             fragmentTransaction = fragmentManager.beginTransaction();
 
             if (fragment != null) {
+                fragment.showLayout();
                 fragment.pict1.setVisibility(View.VISIBLE);
                 fragment.pict2.setVisibility(View.VISIBLE);
                 fragment.pict3.setVisibility(View.VISIBLE);
+            }
+
+            //Рассчитываем размеры картинок
+            int pictWidth, pictHight;
+            int pictHeightInDp = 200;
+            if (recPictures.size() == 1) {
+
+                pictWidth = app_context.getResources().getDisplayMetrics().widthPixels;
+                pictHight = pictHeightInDp * (int)app_context.getResources().getDisplayMetrics().density;
+
+            } else if (recPictures.size() == 2) {
+
+                pictWidth = app_context.getResources().getDisplayMetrics().widthPixels/2 -
+                        (int)app_context.getResources().getDisplayMetrics().density * paddingDp;
+                pictHight =  pictHeightInDp * (int)app_context.getResources().getDisplayMetrics().density;
+
+            } else if (recPictures.size() == 3) {
+
+                pictWidth = (app_context.getResources().getDisplayMetrics().widthPixels -
+                        4 * (int)app_context.getResources().getDisplayMetrics().density * paddingDp)/3;
+
+                pictHight =  pictHeightInDp * (int)app_context.getResources().getDisplayMetrics().density;
+
+            } else {
+                pictWidth = pictHight = 1;
             }
 
             for (int i = 0; i < recPictures.size(); i++) {
@@ -343,22 +411,78 @@ public class ScriptEdit extends AppCompatActivity {
 
                     if (j == 0) {
                         myBitmap1 = BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
-                        fragment.setPicture1(myBitmap1);
+                        try {
+                            exifObject = new ExifInterface(imgFile.getAbsolutePath());
+
+                            orientation = exifObject.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+                            freshBitmap1 = rotateBitmap(myBitmap1, orientation);
+
+                        }
+                        catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                        if (freshBitmap1 != null) {
+                            fragment.setPicture1(ThumbnailUtils.extractThumbnail(freshBitmap1, pictWidth, pictHight,
+                                    ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
+                        }
+                        else {
+                            if (myBitmap1 != null)
+                                fragment.setPicture1(ThumbnailUtils.extractThumbnail(myBitmap1, pictWidth, pictHight,
+                                    ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
+                        }
+
                         fragment.pict1.setOnClickListener(openFullPicture);
 
                         addedPictIds[j] = recPictures.get(i).getRowId();
-
                     }
                     if (j == 1) {
                         myBitmap2 = BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
-                        fragment.setPicture2(myBitmap2);
+
+                        try {
+                            exifObject = new ExifInterface(imgFile.getAbsolutePath());
+                            orientation = exifObject.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+                            freshBitmap2 = rotateBitmap(myBitmap2, orientation);
+                        }
+                        catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                        if (freshBitmap2 != null) {
+                            fragment.setPicture2(ThumbnailUtils.extractThumbnail(freshBitmap2, pictWidth, pictHight,
+                                    ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
+                        }
+                        else {
+                            if (myBitmap2 != null) fragment.setPicture2(ThumbnailUtils.extractThumbnail(myBitmap2, pictWidth, pictHight,
+                                    ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
+                        }
+
                         fragment.pict2.setOnClickListener(openFullPicture);
 
                         addedPictIds[j] = recPictures.get(i).getRowId();
                     }
                     if (j == 2) {
                         myBitmap3 = BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
-                        fragment.setPicture3(myBitmap3);
+
+                        try {
+                            exifObject = new ExifInterface(imgFile.getAbsolutePath());
+                            orientation = exifObject.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+                            freshBitmap3 = rotateBitmap(myBitmap3, orientation);
+
+                        }
+                        catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                        if (freshBitmap3 != null) {
+                            fragment.setPicture3(ThumbnailUtils.extractThumbnail(freshBitmap3, pictWidth, pictHight,
+                                    ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
+                        }
+                        else {
+                            if (myBitmap3 != null) fragment.setPicture3(ThumbnailUtils.extractThumbnail(myBitmap3, pictWidth, pictHight,
+                                    ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
+                        }
+
                         fragment.pict3.setOnClickListener(openFullPicture);
 
                         addedPictIds[j] = recPictures.get(i).getRowId();
@@ -372,10 +496,26 @@ public class ScriptEdit extends AppCompatActivity {
             if (j == 1) {
                 fragment.pict2.setVisibility(View.GONE);
                 fragment.pict3.setVisibility(View.GONE);
+                //Делаем границу между картинками
+                fragment.pict1.setPadding(0, 0, 0, paddingPixel);
             }
             if (j == 2) {
                 fragment.pict3.setVisibility(View.GONE);
+                //Делаем границу между картинками
+                float density = app_context.getResources().getDisplayMetrics().density;
+                int paddingPixel = (int)(paddingDp * density);
+                fragment.pict1.setPadding(0, 0, paddingPixel, paddingPixel);
+                fragment.pict2.setPadding(paddingPixel, 0, 0, paddingPixel);
             }
+            if (j == 3) {
+                //Делаем границу между картинками
+                float density = app_context.getResources().getDisplayMetrics().density;
+                int paddingPixel = (int)(paddingDp * density);
+                fragment.pict1.setPadding(0, 0, paddingPixel, paddingPixel);
+                fragment.pict2.setPadding(paddingPixel, 0, paddingPixel, paddingPixel);
+                fragment.pict3.setPadding(paddingPixel, 0, 0, paddingPixel);
+            }
+
             if (fragment != null)
                 fragmentTransaction.replace(R.id.dynamic_fragment_frame_layout, fragment);
             fragmentTransaction.commit();
@@ -402,6 +542,39 @@ public class ScriptEdit extends AppCompatActivity {
 
         if (varSet != null && varSet.containsKey(MyScriptDB.ROW_ID))
             rowToUpdate = varSet.getInt(MyScriptDB.ROW_ID);  //Загружаем rowId, если он передан
+
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+
+
+        if (app_context == null)
+            app_context = getApplicationContext();
+
+        varSet = intent.getExtras();
+
+        if (varSet != null)  {
+
+            if (varSet.containsKey(MainActivity.CALLER_ACTIVITY_NAME) &&
+                    varSet.getString(MainActivity.CALLER_ACTIVITY_NAME).equals(CameraView.NAME_INTENT_CAMERAVIEW)) {
+
+                if (varSet.containsKey(ScriptEdit.TITLE_FIELD_CONTENT))
+                    etScriptTitle.setText(varSet.getString(ScriptEdit.TITLE_FIELD_CONTENT));
+
+                if (varSet.containsKey(ScriptEdit.CONTENT_FIELD_CONTENT))
+                    etScriptContent.setText(varSet.getString(ScriptEdit.CONTENT_FIELD_CONTENT));
+            }
+
+            //Загружаем row_id, если он был передан
+            if (varSet.containsKey(MyScriptDB.ROW_ID))
+                rowToUpdate = varSet.getInt(MyScriptDB.ROW_ID);
+        }
+
+
+        //Загружаем фотографии
+        picturesLoad(rowToUpdate);
     }
 
     public View.OnClickListener openFullPicture = new View.OnClickListener() {
@@ -451,12 +624,16 @@ public class ScriptEdit extends AppCompatActivity {
 
                 } catch (IOException ex) {
 
-                    Log.i(TAG, "Error occurred while creating the file");
+                    ex.printStackTrace();
                 }
 
                 if (photoFile != null && data.getData() != null) {
 
+                    //***********************************************
+
                     InputStream inputStream = this.getContentResolver().openInputStream(data.getData());
+
+
                     FileOutputStream fileOutputStream = new FileOutputStream(photoFile);
                     // Copying
                     if (inputStream != null)
@@ -465,7 +642,6 @@ public class ScriptEdit extends AppCompatActivity {
                     fileOutputStream.close();
                     if (inputStream != null)
                         inputStream.close();
-
 
                     //Добавляем запись о файле в БД
                     //Создаем новую задачу в БД, если ее не было
@@ -479,6 +655,11 @@ public class ScriptEdit extends AppCompatActivity {
                     else if (rowToUpdate == -1) {
                         ScriptRecord newRec = new ScriptRecord(MyScriptDB.EMPTY_ROW_ID, "", "");
                         rowToUpdate = myDB.insertScript(newRec);
+
+                        int pictureRecId = myDB.insertPictureRecord(rowToUpdate, photoFile.getParentFile().getAbsolutePath(), photoFile.getName());
+
+                        if (pictureRecId == -1)
+                            Toast.makeText(this, getResources().getString(R.string.photoNotAddedToDBError), Toast.LENGTH_LONG).show();
 
                         //Добавляем значение в набор varSet для корректной работы кнопки сохранения
                         if (varSet == null) {
@@ -496,11 +677,14 @@ public class ScriptEdit extends AppCompatActivity {
                     Toast.makeText(this, getResources().getString(R.string.fileNotCopied), Toast.LENGTH_LONG).show();
 
             } catch (Exception e) {
-                Log.d(TAG, "onActivityResult: " + e.toString());
+                e.printStackTrace();
                 Toast.makeText(this, getResources().getString(R.string.fileNotCopied), Toast.LENGTH_LONG).show();
             }
 
         }
+
+        //Загружаем фотографии
+        picturesLoad(rowToUpdate);
     }
 
     private File createImageFile() throws IOException {
@@ -529,6 +713,96 @@ public class ScriptEdit extends AppCompatActivity {
         int bytesRead;
         while ((bytesRead = input.read(buffer)) != -1) {
             output.write(buffer, 0, bytesRead);
+        }
+    }
+
+    //обработчик ввода данных для того, чтобы заменять первые буквы на большие
+    private TextWatcher castFirstLetter = new TextWatcher() {
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+        }
+
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+        }
+
+        @Override
+        public void afterTextChanged(Editable s) {
+            if (s.length() > 0 && s.charAt(s.length() - 1) == 32) {
+                int spaceCount = 0;
+                for(int i=0; i < s.length(); i++) {
+                    if(s.charAt(i) == 32)
+                        spaceCount++;
+                }
+
+                String firstLetter = s.toString().substring(0, 1);
+
+                if (spaceCount == 1 && !firstLetter.toUpperCase().equals(firstLetter)) {
+                    String tempText = firstLetter.toUpperCase() + s.toString().substring(1);
+                    s.replace(0, s.length(), tempText);
+                }
+            }
+
+        }
+    };
+
+    //Сохраняем значение row_id и полей для случаев переворачивания устройства
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+
+        if (rowToUpdate > 0) {
+            savedInstanceState.putInt(MyScriptDB.ROW_ID, rowToUpdate);
+        }
+
+        savedInstanceState.putString(ScriptEdit.TITLE_FIELD_CONTENT, etScriptTitle.getText().toString());
+        savedInstanceState.putString(ScriptEdit.CONTENT_FIELD_CONTENT, etScriptContent.getText().toString());
+
+    }
+
+    //Функция для поворота картинки
+    public static Bitmap rotateBitmap(Bitmap bitmap, int orientation) {
+        Matrix matrix = new Matrix();
+        switch (orientation) {
+            case ExifInterface.ORIENTATION_NORMAL:
+                return bitmap;
+            case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
+                matrix.setScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                matrix.setRotate(180);
+                break;
+            case ExifInterface.ORIENTATION_FLIP_VERTICAL:
+                matrix.setRotate(180);
+                matrix.postScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_TRANSPOSE:
+                matrix.setRotate(90);
+                matrix.postScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                matrix.setRotate(90);
+                break;
+            case ExifInterface.ORIENTATION_TRANSVERSE:
+                matrix.setRotate(-90);
+                matrix.postScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                matrix.setRotate(-90);
+                break;
+            default:
+                return bitmap;
+        }
+        try {
+            Bitmap bmRotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            bitmap.recycle();
+            return bmRotated;
+        }
+        catch (OutOfMemoryError e) {
+            e.printStackTrace();
+            return null;
         }
     }
 }

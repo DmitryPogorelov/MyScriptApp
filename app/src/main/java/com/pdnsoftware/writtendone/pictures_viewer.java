@@ -1,4 +1,4 @@
-package com.example.myscript;
+package com.pdnsoftware.writtendone;
 
 
 import android.graphics.Bitmap;
@@ -9,11 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.TextView;
-import android.widget.Toast;
-
 
 public class pictures_viewer extends Fragment {
 
@@ -54,4 +50,7 @@ public class pictures_viewer extends Fragment {
         linLayout.setVisibility(View.GONE);
     }
 
+    public void showLayout () {
+        linLayout.setVisibility(View.VISIBLE);
+    }
 }

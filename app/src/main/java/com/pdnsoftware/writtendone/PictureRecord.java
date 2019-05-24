@@ -1,29 +1,12 @@
-package com.example.myscript;
+package com.pdnsoftware.writtendone;
 
-public class PictureRecord {
+class PictureRecord {
     private int rowId;
     private int scriptId;
     private String picturePath;
     private String pictureName;
     private String createdDate;
 
-    //Конструктор для создания пустой записи
-    public PictureRecord() {
-        this.rowId          = -1;
-        this.scriptId       = -1;
-        this.picturePath    = "";
-        this.pictureName    = "";
-        this.createdDate    = "";
-    }
-
-    //Конструктор для создания новой записи - у него нет row_id
-    public PictureRecord(int scriptId, String picturePath, String pictureName, String createdDate) {
-        this.rowId          = -1;
-        this.scriptId       = scriptId;
-        this.picturePath    = picturePath;
-        this.pictureName    = pictureName;
-        this.createdDate    = createdDate;
-    }
     //Конструктор для выгрузки данных из БД
     PictureRecord(int rowId, int scriptId, String picturePath, String pictureName, String createdDate) {
         this.rowId          = rowId;

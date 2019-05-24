@@ -16,6 +16,9 @@
             android:layout_weight="1"
             android:background="@null"
             android:visibility="visible"
+             android:maxHeight="200dp"
+            android:scaleType="centerCrop"
+            android:adjustViewBounds="true"
             android:contentDescription="@string/picture_holder" />
 
         <ImageButton
@@ -26,6 +29,9 @@
             android:layout_weight="1"
             android:background="@null"
             android:visibility="visible"
+            android:scaleType="centerCrop"
+            android:maxHeight="200dp"
+            android:adjustViewBounds="true"
             android:contentDescription="@string/picture_holder" />
 
         <ImageButton
@@ -34,7 +40,10 @@
             android:layout_height="wrap_content"
             app:srcCompat="@drawable/camera"
             android:layout_weight="1"
+            android:scaleType="centerCrop"
+            android:adjustViewBounds="true"
             android:background="@null"
+            android:maxHeight="200dp"
             android:visibility="visible"
             android:contentDescription="@string/picture_holder" />
 

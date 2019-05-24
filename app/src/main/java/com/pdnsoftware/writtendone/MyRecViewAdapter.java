@@ -1,4 +1,4 @@
-package com.example.myscript;
+package com.pdnsoftware.writtendone;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -9,8 +9,10 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import java.util.List;
+import java.util.Locale;
 
 
 public class MyRecViewAdapter extends RecyclerView.Adapter<MyRecViewAdapter.MyViewHolder> {
@@ -23,6 +25,9 @@ public class MyRecViewAdapter extends RecyclerView.Adapter<MyRecViewAdapter.MyVi
         TextView tv_content;
         TextView tvDateTimeCreated;
         ImageButton delRecordButton;
+        ImageView clipImage;
+        TextView picturesCount;
+
 
         MyViewHolder(View v) {
             super(v);
@@ -30,9 +35,12 @@ public class MyRecViewAdapter extends RecyclerView.Adapter<MyRecViewAdapter.MyVi
             tv_content = v.findViewById(R.id.tv_content);
             delRecordButton = v.findViewById(R.id.delRecordButton);
             tvDateTimeCreated = v.findViewById(R.id.tvDateTimeCreated);
+            clipImage = v.findViewById(R.id.clip_image);
+            picturesCount = v.findViewById(R.id.pictures_count);
 
             v.setOnClickListener(this);
             delRecordButton.setOnClickListener(delButtonClick);
+
         }
 
         //По нажатию на запись открываем ее для редактирования
@@ -102,6 +110,36 @@ public class MyRecViewAdapter extends RecyclerView.Adapter<MyRecViewAdapter.MyVi
         holder.tv_title.setText(data.get(position).getTitle());
         holder.tv_content.setText(data.get(position).getContent());
         holder.tvDateTimeCreated.setText(data.get(position).getCreatedDate());
+
+        int padding2dp = (int)holder.itemView.getContext().getResources().getDisplayMetrics().density * 2;
+
+        if (data.get(position).getPictCount() == 0) {
+            holder.clipImage.setVisibility(View.INVISIBLE);
+            holder.picturesCount.setVisibility(View.INVISIBLE);
+        }
+        else if (data.get(position).getPictCount() > 0) {
+            holder.clipImage.setVisibility(View.VISIBLE);
+            holder.picturesCount.setVisibility(View.VISIBLE);
+            holder.picturesCount.setText( String.format(Locale.US, "%s", data.get(position).getPictCount()));
+        }
+
+        if (data.get(position).getTitle().length() > 0 && data.get(position).getContent().length() > 0) {
+            holder.tv_title.setVisibility(View.VISIBLE);
+            holder.tv_content.setVisibility(View.VISIBLE);
+            holder.tv_content.setPadding(0, 0, 0,0);
+        }
+        else if (data.get(position).getTitle().length() == 0 && data.get(position).getContent().length() > 0) {
+            holder.tv_title.setVisibility(View.GONE);
+            holder.tv_content.setVisibility(View.VISIBLE);
+            holder.tv_content.setPadding(0, padding2dp, 0,0);
+
+        }
+        else if (data.get(position).getContent().length() == 0 && data.get(position).getTitle().length() > 0) {
+            holder.tv_title.setVisibility(View.VISIBLE);
+            holder.tv_content.setVisibility(View.GONE);
+            holder.tv_content.setPadding(0, 0, 0,0);
+        }
+
     }
 
     // Return the size of your dataset (invoked by the layout manager)

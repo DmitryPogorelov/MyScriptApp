@@ -15,12 +15,20 @@
     <string name="contentHint">Описание задачи</string>
     <string name="recordAddedSuccess">Задача успешно добавлена!</string>
 
+    <string name="row_layout_header">Заголовок задачи</string>
+    <string name="row_layout_content">Это пример содержания задачи</string>
+    <string name="row_layout_datetime">23.05.2019 16:48</string>
+    <string name="row_layout_trashcan_desc">Удалить задачу</string>
+    <string name="row_layout_pict_quantity">3</string>
+    <string name="row_layout_paperclip">Скрепка</string>
+
     //Ошибки и предупреждения
     <string name="emptyRecordWarning">Невозможно сохранить пустую запись!</string>
     <string name="errorInIsert">Не удалось добавить запись в БД!</string>
     <string name="deviceHasNoCameraError">В устройстве отсутствует камера!</string>
     <string name="photoNotAddedToDBError">Фото не добавлено в БД</string>
     <string name="fileNotCopied">Не удалось скопировать файл!</string>
+    <string name="tooMatchPictures">К задаче возможно прикрепить не более 3-х картинок!</string>
 
     //Строки меню главного экрана
     <string name="addnewscript_sign">Добавить</string>
@@ -42,4 +50,11 @@
     <string name="sureToDeletePhoto">Удалить это изображение?</string>
     <string name="sureToDeletePhotoYes">Да!</string>
     <string name="sureToDeletePhotoNo">Нет!</string>
+
+    //Text hints
+    <string name="hint_script_title">Заголовок</string>
+    <string name="hint_script_content">Содержание</string>
+    
+    //Intent filters
+    <string name="filter_title_writtendone">Written Done - Что записано, то сделано!</string>
 </resources>

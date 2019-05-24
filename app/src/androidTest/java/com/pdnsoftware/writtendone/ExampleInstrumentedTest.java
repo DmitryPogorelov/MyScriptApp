@@ -1,4 +1,4 @@
-package com.example.myscript;
+package com.pdnsoftware.writtendone;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

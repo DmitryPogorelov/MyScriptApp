@@ -1,4 +1,4 @@
-package com.example.myscript;
+package com.pdnsoftware.writtendone;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+
+import static com.pdnsoftware.writtendone.MyScriptDB.TABLE_SCRIPTS;
 
 class MyScriptDBManager {
 
@@ -42,7 +44,7 @@ class MyScriptDBManager {
 
         List<ScriptRecord> ret_array = new ArrayList<>();
         openDBRead();
-        Cursor cursor = db.rawQuery("SELECT * FROM " + MyScriptDB.TABLE_SCRIPTS + " ORDER BY _id DESC", null);
+        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_SCRIPTS + " ORDER BY _id DESC", null);
 
         if (cursor != null && cursor.getCount() > 0) {
 
@@ -52,12 +54,15 @@ class MyScriptDBManager {
             int createdDateColumnIndex = cursor.getColumnIndex(MyScriptDB.SCRIPTS_CREATED_DATE);
             int finishedColumnIndex = cursor.getColumnIndex(MyScriptDB.SCRIPTS_FINISHED);
             int finishedDateColumnIndex = cursor.getColumnIndex(MyScriptDB.SCRIPTS_FINISH_DATE);
+            int pictCountColumnIndex = cursor.getColumnIndex(MyScriptDB.SCRIPTS_PICTCOUNT);
 
             while (cursor.moveToNext()) {
                 // Используем индекс для получения строки или числа
                 ret_array.add(new ScriptRecord(cursor.getInt(idColumnIndex), cursor.getString(titleColumnIndex),
                         cursor.getString(contentColumnIndex), cursor.getString(createdDateColumnIndex), cursor.getInt(finishedColumnIndex),
-                        cursor.getString(finishedDateColumnIndex)));
+                        cursor.getString(finishedDateColumnIndex), cursor.getInt(pictCountColumnIndex)));
+
+
             }
         }
         if (cursor != null) cursor.close();
@@ -71,7 +76,7 @@ class MyScriptDBManager {
 
         openDBRead();
         String where = String.format(Locale.US, "%s=%d", MyScriptDB.ROW_ID, scriptId); //Указываем id строки для чтения
-        Cursor cursor = db.query(MyScriptDB.TABLE_SCRIPTS, null, where, null, null, null, null);
+        Cursor cursor = db.query(TABLE_SCRIPTS, null, where, null, null, null, null);
         if (cursor != null && cursor.getCount() == 1) {
             cursor.moveToFirst();
             int idColumnIndex = cursor.getColumnIndex(MyScriptDB.ROW_ID);
@@ -80,12 +85,14 @@ class MyScriptDBManager {
             int createdDateColumnIndex = cursor.getColumnIndex(MyScriptDB.SCRIPTS_CREATED_DATE);
             int finishedColumnIndex = cursor.getColumnIndex(MyScriptDB.SCRIPTS_FINISHED);
             int finishedDateColumnIndex = cursor.getColumnIndex(MyScriptDB.SCRIPTS_FINISH_DATE);
+            int pictCountColumnIndex = cursor.getColumnIndex(MyScriptDB.SCRIPTS_PICTCOUNT);
 
             ret_script.setRowId(cursor.getInt(idColumnIndex));
             ret_script.setTitle(cursor.getString(titleColumnIndex));
             ret_script.setContent(cursor.getString(contentColumnIndex));
             ret_script.setCreatedDate(cursor.getString(createdDateColumnIndex));
             ret_script.setFinished(cursor.getInt(finishedColumnIndex), cursor.getString(finishedDateColumnIndex));
+            ret_script.setPictCount(cursor.getInt(pictCountColumnIndex));
         }
         if (cursor != null) cursor.close();
         closeDB();
@@ -96,7 +103,7 @@ class MyScriptDBManager {
 
         openDBWrite();
 
-        ContentValues insert_row = new ContentValues(5);
+        ContentValues insert_row = new ContentValues(6);
 
         insert_row.put(MyScriptDB.SCRIPTS_TITLE, sr.getTitle());
         insert_row.put(MyScriptDB.SCRIPTS_CONTENT, sr.getContent());
@@ -107,8 +114,9 @@ class MyScriptDBManager {
         insert_row.put(MyScriptDB.SCRIPTS_CREATED_DATE, curr_date);
         insert_row.put(MyScriptDB.SCRIPTS_FINISHED, MyScriptDB.MARK_AS_OPENED);
         insert_row.put(MyScriptDB.SCRIPTS_FINISH_DATE, "");
+        insert_row.put(MyScriptDB.SCRIPTS_PICTCOUNT, 0);
 
-        int result = (int)db.insertOrThrow(MyScriptDB.TABLE_SCRIPTS, null, insert_row);
+        int result = (int)db.insertOrThrow(TABLE_SCRIPTS, null, insert_row);
 
         closeDB();
 
@@ -125,7 +133,7 @@ class MyScriptDBManager {
 
         String where = String.format(Locale.US, "%s=%d", MyScriptDB.ROW_ID, sr.getRowId()); //Указываем id строки для обновления
 
-        int result = db.update(MyScriptDB.TABLE_SCRIPTS, update_row, where, null);
+        int result = db.update(TABLE_SCRIPTS, update_row, where, null);
         closeDB();
         return result;
     }
@@ -136,7 +144,7 @@ class MyScriptDBManager {
 
         openDBWrite();
         String where = String.format(Locale.US, "%s=%d", MyScriptDB.ROW_ID, rowId);
-        int result = db.delete(MyScriptDB.TABLE_SCRIPTS, where, null);
+        int result = db.delete(TABLE_SCRIPTS, where, null);
         closeDB();
 
         return result;
@@ -158,7 +166,11 @@ class MyScriptDBManager {
         String curr_date = df.format(calendar.getTime());
         insert_row.put(MyScriptDB.PICTURES_CREATED_DATE, curr_date);
         int result = (int)db.insertOrThrow(MyScriptDB.TABLE_PICTURES, null, insert_row);
+
         closeDB();
+
+        updatePictCountByScriptId(scriptId);
+
         return result;
     }
 
@@ -244,7 +256,11 @@ class MyScriptDBManager {
             openDBWrite();
             String where = String.format(Locale.US, "%s=%d", MyScriptDB.ROW_ID, pictureId);
             dbRecDeleteResult = db.delete(MyScriptDB.TABLE_PICTURES, where, null);
+
             closeDB();
+
+            //обновляем количество картинок у в таблице scripts
+            updatePictCountByScriptId(picToDelete.getScriptId());
         }
 
         return dbRecDeleteResult;
@@ -302,4 +318,68 @@ class MyScriptDBManager {
 
         return taskName;
     }
+
+    //Функция считает количество картинок по указанному script_id
+    int picturesCounter(int scriptId) {
+        int pictCount = 0;
+
+        openDBRead();
+
+        Cursor cursor = db.rawQuery("SELECT count(*) AS PICT_COUNT FROM " + MyScriptDB.TABLE_PICTURES + " WHERE "
+                + MyScriptDB.PICTURES_SCRIPT_ID + " = " + scriptId, null);
+
+        if (cursor != null && cursor.getCount() == 1) {
+
+            int idPictCountIndex = cursor.getColumnIndex("PICT_COUNT");
+
+            cursor.moveToFirst();
+
+            // Используем индекс для получения строки или числа
+            pictCount = cursor.getInt(idPictCountIndex);
+
+        }
+        if (cursor != null) cursor.close();
+        closeDB();
+
+        return pictCount;
+    }
+
+    //Функция обновляет количество фотографий в записи скрипта
+    private void updatePictCountByScriptId(int scriptId) {
+
+        int pictCount = picturesCounter(scriptId);
+
+        ContentValues update_row = new ContentValues(1); //Создаем строку со значениями для обновления
+
+        update_row.put(MyScriptDB.SCRIPTS_PICTCOUNT, pictCount);
+
+        String where = String.format(Locale.US, "%s=%d", MyScriptDB.ROW_ID, scriptId); //Указываем id строки для обновления
+
+        openDBWrite();
+        db.update(TABLE_SCRIPTS, update_row, where, null);
+        closeDB();
+    }
+
+    //Функция возвращает количество задач
+    int getTasksCount() {
+        int taskCount = 0;
+
+        openDBRead();
+
+        Cursor cursor = db.rawQuery("SELECT count(*) AS TASK_COUNT FROM " + TABLE_SCRIPTS, null);
+
+
+
+        if (cursor != null && cursor.getCount() == 1) {
+            int idTaskCountIndex = cursor.getColumnIndex("TASK_COUNT");
+            cursor.moveToFirst();
+            //Используем индекс для получения строки или числа
+            taskCount = cursor.getInt(idTaskCountIndex);
+        }
+
+        if (cursor != null) cursor.close();
+        closeDB();
+        return taskCount;
+    }
+
 }

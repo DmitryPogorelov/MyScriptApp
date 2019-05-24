@@ -1,4 +1,4 @@
-package com.example.myscript;
+package com.pdnsoftware.writtendone;
 
 import org.junit.Test;
 

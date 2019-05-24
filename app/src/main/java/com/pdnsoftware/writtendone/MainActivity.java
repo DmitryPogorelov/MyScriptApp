@@ -1,4 +1,4 @@
-package com.example.myscript;
+package com.pdnsoftware.writtendone;
 
 import android.content.Intent;
 import android.support.v7.app.ActionBar;
@@ -11,6 +11,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -21,9 +22,10 @@ public class MainActivity extends AppCompatActivity {
     private MyScriptDBManager myDB;
     public static final String CALLER_ACTIVITY_NAME = "caller_activity_name";
     public static final String NAME_INTENT_MAINACTIVITY = "intent_MainActivity";
-    /**/
+    /************************************************************************/
     public RecyclerView recyclerView;
-    /**/
+    /************************************************************************/
+    ActionBar currActionBar;
 
     private ActionMode.Callback callback = new ActionMode.Callback() {
         @Override
@@ -54,10 +56,14 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Заводим ActionBar, чтобы на нем была стрелка назад
-        ActionBar currActionBar = getSupportActionBar();
-        if (currActionBar != null)
-            currActionBar.setTitle(R.string.mainActivitySign);
+        myDB = new MyScriptDBManager(this);
+
+        //Заводим ActionBar, чтобы на нем была стрелка назад и количество задач
+        currActionBar = getSupportActionBar();
+        if (currActionBar != null) {
+            int taskCount = myDB.getTasksCount();
+            currActionBar.setTitle(String.format(Locale.US, getResources().getString(R.string.mainActivitySign) + " (%s)", taskCount));
+        }
 
         recyclerView = findViewById(R.id.task_list);
 
@@ -66,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(layoutManager);
 
         //Извлекаем данные из БД
-        myDB = new MyScriptDBManager(this);
+
         test_data = myDB.getTasksList();
 
         // specify an adapter (see also next example)
@@ -107,5 +113,11 @@ public class MainActivity extends AppCompatActivity {
         test_data.clear();
         test_data.addAll(myDB.getTasksList());
         curr_adapter.notifyDataSetChanged();
+
+        //Обновляем количество задач в ActionBar
+        if (currActionBar != null) {
+            int taskCount = myDB.getTasksCount();
+            currActionBar.setTitle(String.format(Locale.US, getResources().getString(R.string.mainActivitySign) + " (%s)", taskCount));
+        }
     }
 }

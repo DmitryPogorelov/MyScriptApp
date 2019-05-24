@@ -1,4 +1,4 @@
-package com.example.myscript;
+package com.pdnsoftware.writtendone;
 
 import android.content.Context;
 import android.content.Intent;
@@ -15,6 +15,7 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -144,7 +145,8 @@ public class CameraView extends AppCompatActivity {
                     StreamConfigurationMap streamConfigurationMap = cameraCharacteristics.get(
                             CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
 
-                    previewSize = streamConfigurationMap.getOutputSizes(SurfaceTexture.class)[0];
+                    if (streamConfigurationMap != null)
+                        previewSize = streamConfigurationMap.getOutputSizes(SurfaceTexture.class)[0];
                     camIDtoUse = cameraId;
                 }
             }
@@ -172,7 +174,7 @@ public class CameraView extends AppCompatActivity {
 
     CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
         @Override
-        public void onOpened(CameraDevice cameraDevice) {
+        public void onOpened(@NonNull CameraDevice cameraDevice) {
             myCam = cameraDevice;
             createPreviewSession();
         }
@@ -202,7 +204,7 @@ public class CameraView extends AppCompatActivity {
                     new CameraCaptureSession.StateCallback() {
 
                         @Override
-                        public void onConfigured(CameraCaptureSession cameraCaptureSession) {
+                        public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
                             if (myCam == null) {
                                 return;
                             }
@@ -218,7 +220,7 @@ public class CameraView extends AppCompatActivity {
                         }
 
                         @Override
-                        public void onConfigureFailed(CameraCaptureSession cameraCaptureSession) {
+                        public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
 
                         }
                     }, backgroundHandler);
@@ -310,7 +312,7 @@ public class CameraView extends AppCompatActivity {
         try {
             outputPhoto = new FileOutputStream(createImageFile(galleryFolder));
 
-            boolean res = currTextureView.getBitmap().compress(Bitmap.CompressFormat.JPEG, 75, outputPhoto);
+            boolean res = currTextureView.getBitmap().compress(Bitmap.CompressFormat.JPEG, 100, outputPhoto);
             if (res) {
 
                 String fullFilePath = galleryFolder.getAbsolutePath();
@@ -346,22 +348,6 @@ public class CameraView extends AppCompatActivity {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    private void lock() {
-        try {
-            gCameraCaptureSession.capture(captureRequestBuilder.build(), null, backgroundHandler);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void unlock() {
-        try {
-            gCameraCaptureSession.setRepeatingRequest(captureRequestBuilder.build(), null, backgroundHandler);
-        } catch (CameraAccessException e) {
-            e.printStackTrace();
         }
     }
 
