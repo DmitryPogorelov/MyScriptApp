@@ -4,7 +4,6 @@
     <color name="colorPrimaryDark">#FFB625</color>
     <color name="colorAccent">#D81B60</color>
 
-    <color name="rowColorLight">#FDE0AD</color>
     <color name="rowColorDark">#FCC460</color>
     <color name="colorRowDateTimeCreated">#4F4F4F</color>
 </resources>

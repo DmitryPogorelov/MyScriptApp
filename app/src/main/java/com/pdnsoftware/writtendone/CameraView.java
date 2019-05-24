@@ -38,7 +38,7 @@ import java.util.Locale;
 public class CameraView extends AppCompatActivity {
 
     private CameraManager camManager;
-    int cameraFacing;
+    private int cameraFacing;
     private Size previewSize;
     private String camIDtoUse;
     private CameraDevice myCam;
@@ -46,8 +46,8 @@ public class CameraView extends AppCompatActivity {
     private CaptureRequest captureRequest;
     private CameraCaptureSession gCameraCaptureSession;
 
-    HandlerThread backgroundThread;
-    Handler backgroundHandler;
+    private HandlerThread backgroundThread;
+    private Handler backgroundHandler;
 
     private TextureView currTextureView;
 
@@ -72,7 +72,6 @@ public class CameraView extends AppCompatActivity {
 
         if (currActionBar != null)
             currActionBar.hide();
-
 
         //Привязываем переменные к элементам
         currTextureView = findViewById(R.id.camTextureView);
@@ -172,7 +171,7 @@ public class CameraView extends AppCompatActivity {
         backgroundHandler = new Handler(backgroundThread.getLooper());
     }
 
-    CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
+    private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(@NonNull CameraDevice cameraDevice) {
             myCam = cameraDevice;
@@ -305,8 +304,7 @@ public class CameraView extends AppCompatActivity {
         return new File(mPath);
     }
 
-    public void onTakePhotoButtonClicked() {
-        //lock();
+    private void onTakePhotoButtonClicked() {
         FileOutputStream outputPhoto = null;
 
         try {

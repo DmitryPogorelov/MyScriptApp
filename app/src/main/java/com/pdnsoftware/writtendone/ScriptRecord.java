@@ -45,8 +45,8 @@ class ScriptRecord {
     String getTitle() {return script_title;}
     String getContent() {return script_content;}
     String getCreatedDate() {return created_date;}
-    int getFinished() {return finished;}
-    String getFinishDate() {return finish_date;}
+//    int getFinished() {return finished;}
+//    String getFinishDate() {return finish_date;}
     int getPictCount() {return pictCount;}
 
     void setRowId(int val) {row_id = val;}

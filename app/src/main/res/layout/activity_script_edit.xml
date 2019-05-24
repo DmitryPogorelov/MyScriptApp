@@ -7,7 +7,6 @@
     android:layout_height="match_parent">
 
     <LinearLayout
-        android:id="@+id/script_edit_main_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minHeight="0dp"
@@ -27,7 +26,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:autofillHints="TASK_HEADER"
+            tools:ignore="Autofill"
             android:hint="@string/hint_script_title"
             android:inputType="textMultiLine"
             android:text="" />
@@ -39,7 +38,7 @@
             android:layout_marginTop="8dp"
             android:layout_weight="1"
             android:gravity="top|start"
-            android:autofillHints="TASK_CONTENT"
+            tools:ignore="Autofill"
             android:hint="@string/hint_script_content"
             android:inputType="textMultiLine"
             android:singleLine="false" />

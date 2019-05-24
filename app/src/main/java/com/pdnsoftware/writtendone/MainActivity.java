@@ -6,7 +6,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuItem;
 import java.util.ArrayList;
@@ -15,7 +14,7 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    public MyRecViewAdapter curr_adapter;
+    private MyRecViewAdapter curr_adapter;
 
     private List<ScriptRecord> test_data = new ArrayList<>();
 
@@ -23,33 +22,15 @@ public class MainActivity extends AppCompatActivity {
     public static final String CALLER_ACTIVITY_NAME = "caller_activity_name";
     public static final String NAME_INTENT_MAINACTIVITY = "intent_MainActivity";
     /************************************************************************/
-    public RecyclerView recyclerView;
+    private RecyclerView recyclerView;
     /************************************************************************/
-    ActionBar currActionBar;
+    private ActionBar currActionBar;
 
-    private ActionMode.Callback callback = new ActionMode.Callback() {
-        @Override
-        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-            mode.getMenuInflater().inflate(R.menu.ma_menu, menu);
-            return true;
-        }
-
-        @Override
-        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-            return false;
-        }
-
-        @Override
-        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-            return false;
-        }
-
-        @Override
-        public void onDestroyActionMode(ActionMode mode) {
-            //Переменная для вызова меню
-            ActionMode actionMode = null;
-        }
-    };
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+            getMenuInflater().inflate(R.menu.ma_menu, menu);
+        return true;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,12 +62,6 @@ public class MainActivity extends AppCompatActivity {
         //Наводим красоту
         recyclerView.setAdapter(curr_adapter);
         recyclerView.addItemDecoration(new SimpleDividerItemDecoration(this));
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.ma_menu, menu);
-        return true;
     }
 
     @Override

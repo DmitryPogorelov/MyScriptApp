@@ -28,5 +28,5 @@ class PictureRecord {
     int getScriptId() {return scriptId;}
     String getPicturePath() {return picturePath;}
     String getPictureName() {return pictureName;}
-    String getCreatedDate() {return createdDate;}
+//    String getCreatedDate() {return createdDate;}
 }

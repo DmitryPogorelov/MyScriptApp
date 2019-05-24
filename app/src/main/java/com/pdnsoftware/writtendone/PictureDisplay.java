@@ -16,24 +16,18 @@ import java.io.File;
 
 public class PictureDisplay extends AppCompatActivity {
 
-    //Variable for actionbar manipulation
-    ActionBar currActionBar;
-
     //Context holder
     private Context app_context;
 
     //DataBase Manager exeplar
     private MyScriptDBManager myDB;
 
-    Intent fromIntent = new Intent(); //Объект Intent для считывания данных из вызывающей формы
-    Bundle varSet; //объект для параметров вызывающей формы
+    private Bundle varSet; //объект для параметров вызывающей формы
 
-    int pictIdToShow = -1;
+    private int pictIdToShow = -1;
 
     //Идентификатор Activity
     public static final String NAME_INTENT_PICTUREDISPLAY = "intent_PictureDisplay";
-
-    ImageView bigPicture;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,7 +41,8 @@ public class PictureDisplay extends AppCompatActivity {
         myDB = new MyScriptDBManager(app_context);
 
         //Заводим ActionBar, чтобы на нем была стрелка назад
-        currActionBar = getSupportActionBar();
+        //Variable for actionbar manipulation
+        ActionBar currActionBar = getSupportActionBar();
 
         if (currActionBar != null) {
             currActionBar.setDisplayHomeAsUpEnabled(true);
@@ -57,7 +52,7 @@ public class PictureDisplay extends AppCompatActivity {
             currActionBar.setTitle(myDB.getTaskNameByPictId(pictIdToShow));
         }
         //Connect interface objects to variables
-        bigPicture = findViewById(R.id.showPicture);
+        ImageView bigPicture = findViewById(R.id.showPicture);
 
         //Get image from Database/file system and put it into ImageView
         bigPicture.setImageBitmap(pictureShow(pictIdToShow));
@@ -68,7 +63,8 @@ public class PictureDisplay extends AppCompatActivity {
 
         app_context = getApplicationContext();
 
-        fromIntent = getIntent();
+        //Объект Intent для считывания данных из вызывающей формы
+        Intent fromIntent = getIntent();
         varSet = fromIntent.getExtras();
 
         if (varSet != null && varSet.containsKey(ScriptEdit.PICTIRE_ID)) {
@@ -165,11 +161,6 @@ public class PictureDisplay extends AppCompatActivity {
         //Удаляем из набора ID картинки
         if (varSet != null && varSet.containsKey(ScriptEdit.PICTIRE_ID))
             varSet.remove(ScriptEdit.PICTIRE_ID);
-        //Изменяем в наборе ниаменование вызывающей активности
-        if (varSet != null && varSet.containsKey(MainActivity.CALLER_ACTIVITY_NAME)) {
-            varSet.remove(MainActivity.CALLER_ACTIVITY_NAME);
-            varSet.putString(MainActivity.CALLER_ACTIVITY_NAME, PictureDisplay.NAME_INTENT_PICTUREDISPLAY);
-        }
 
         if (varSet != null)
             toScrEditActivityIntent.putExtras(varSet);

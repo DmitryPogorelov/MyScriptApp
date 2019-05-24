@@ -20,8 +20,7 @@
         app:layout_constraintBottom_toBottomOf="@+id/camTextureView">
 
         <ImageView
-            android:id="@+id/btnHidden"
-            android:layout_width="64dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@null"
             android:visibility="invisible"
@@ -34,8 +33,11 @@
             android:id="@+id/btnCamShoot"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:minHeight="90dp"
             android:background="@null"
             android:layout_weight="5"
+            android:foregroundGravity="center"
+            android:scaleType="fitCenter"
             android:contentDescription="@string/camera_view_shoot_button"
             app:srcCompat="@drawable/camera" />
 
@@ -46,7 +48,10 @@
             android:background="@null"
             android:layout_weight="1"
             android:layout_marginEnd="20dp"
+            android:minHeight="50dp"
+            android:scaleType="fitCenter"
             android:layout_gravity="center"
+            android:foregroundGravity="left|center_vertical"
             android:contentDescription="@string/camera_view_return_button"
             app:srcCompat="@drawable/return_arrow_64" />
 

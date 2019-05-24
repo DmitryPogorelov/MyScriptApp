@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import java.util.Locale;
 
-public class MyScriptDB extends SQLiteOpenHelper {
+class MyScriptDB extends SQLiteOpenHelper {
 
     private static final String DB_MYSCRIPT = "myscript_db.db";
     private static final Integer DB_VERSION = 4;

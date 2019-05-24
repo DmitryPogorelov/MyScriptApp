@@ -1,60 +1,56 @@
 <resources>
     <string name="app_name">Written Done</string>
-    <string name="mainActivitySign">Список задач</string>
+    <string name="mainActivitySign">Task list</string>
 
-    <string name="editor_header_add">Добавить новую задачу</string>
-    <string name="editor_header_edit">Редактировать задачу</string>
-    <string name="save_button">Сохранить</string>
-    <string name="saveAndAddButtonText">Сохранить и добавить еще</string>
-    <string name="headerNewTask">Новая задача</string>
-    <string name="headerEditTask">Редактирование задачи</string>
-    <string name="deleteTaskQuestion">Удалить задачу</string>
-    <string name="deleteTaskYes">Удалить</string>
-    <string name="deleteTaskCancel">Отмена</string>
-    <string name="headerHint">Заголовок</string>
-    <string name="contentHint">Описание задачи</string>
-    <string name="recordAddedSuccess">Задача успешно добавлена!</string>
+    <string name="save_button">Save</string>
+    <string name="saveAndAddButtonText">Save and add more</string>
+    <string name="headerNewTask">New task</string>
+    <string name="headerEditTask">Edit Task</string>
+    <string name="deleteTaskQuestion">Delete task</string>
+    <string name="deleteTaskYes">Delete</string>
+    <string name="deleteTaskCancel">Cancel</string>
+    <string name="recordAddedSuccess">Task added successfully!</string>
 
-    <string name="row_layout_header">Заголовок задачи</string>
-    <string name="row_layout_content">Это пример содержания задачи</string>
+    <string name="row_layout_header">Task header</string>
+    <string name="row_layout_content">This is task content example</string>
     <string name="row_layout_datetime">23.05.2019 16:48</string>
-    <string name="row_layout_trashcan_desc">Удалить задачу</string>
+    <string name="row_layout_trashcan_desc">Delete task</string>
     <string name="row_layout_pict_quantity">3</string>
-    <string name="row_layout_paperclip">Скрепка</string>
+    <string name="row_layout_paperclip">Paperclip</string>
 
     //Ошибки и предупреждения
-    <string name="emptyRecordWarning">Невозможно сохранить пустую запись!</string>
-    <string name="errorInIsert">Не удалось добавить запись в БД!</string>
-    <string name="deviceHasNoCameraError">В устройстве отсутствует камера!</string>
-    <string name="photoNotAddedToDBError">Фото не добавлено в БД</string>
-    <string name="fileNotCopied">Не удалось скопировать файл!</string>
-    <string name="tooMatchPictures">К задаче возможно прикрепить не более 3-х картинок!</string>
+    <string name="emptyRecordWarning">Empty task can\'t be saved!</string>
+    <string name="errorInsert">Failed to add record to database!</string>
+    <string name="deviceHasNoCameraError">Device has no camera!</string>
+    <string name="photoNotAddedToDBError">Failed to add photo!</string>
+    <string name="fileNotCopied">Failed to copy the file!</string>
+    <string name="tooMatchPictures">Task can have up to 3 pictures!</string>
 
     //Строки меню главного экрана
-    <string name="addnewscript_sign">Добавить</string>
-    <string name="quitSign">Выйти</string>
+    <string name="addnewscript_sign">Add new script</string>
+    <string name="quitSign">Quit</string>
 
     //Строки меню Script Edit
-    <string name="add_photo">Сделать снимок</string>
-    <string name="add_picture">Добавить из галереи</string>
+    <string name="add_photo">Make photo</string>
+    <string name="add_picture">Add picture from gallery</string>
 
     //ContentDescription strings
-    <string name="camera_view_hidden_button">Скрытая кнопка</string>
-    <string name="camera_view_shoot_button">Сделать фото</string>
-    <string name="camera_view_return_button">Вернуться в редактор</string>
-    <string name="picture_display_imageView">Картинка на весь экран</string>
-    <string name="picture_holder">Картинка из задачи</string>
+    <string name="camera_view_hidden_button">Hidden button</string>
+    <string name="camera_view_shoot_button">Make photo</string>
+    <string name="camera_view_return_button">Back to editor</string>
+    <string name="picture_display_imageView">Picture all screen wide</string>
+    <string name="picture_holder">Picture from task</string>
 
     //Строки меню PictureDisplay
-    <string name="delete_photo">Удалить изображение</string>
-    <string name="sureToDeletePhoto">Удалить это изображение?</string>
-    <string name="sureToDeletePhotoYes">Да!</string>
-    <string name="sureToDeletePhotoNo">Нет!</string>
+    <string name="delete_photo">Delete image</string>
+    <string name="sureToDeletePhoto">Delete this image?</string>
+    <string name="sureToDeletePhotoYes">Yes!</string>
+    <string name="sureToDeletePhotoNo">No!</string>
 
     //Text hints
-    <string name="hint_script_title">Заголовок</string>
-    <string name="hint_script_content">Содержание</string>
+    <string name="hint_script_title">Header</string>
+    <string name="hint_script_content">Content</string>
     
     //Intent filters
-    <string name="filter_title_writtendone">Written Done - Что записано, то сделано!</string>
+    <string name="filter_title_writtendone">Written Done - What had been written will be done!</string>
 </resources>

@@ -7,8 +7,9 @@ import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
-public class SimpleDividerItemDecoration extends RecyclerView.ItemDecoration {
-    private Drawable mDivider;
+class SimpleDividerItemDecoration extends RecyclerView.ItemDecoration {
+
+    private final Drawable mDivider;
 
     SimpleDividerItemDecoration(Context context) {
         mDivider = context.getDrawable(R.drawable.recyclerview_delimiter_layout);
@@ -16,11 +17,13 @@ public class SimpleDividerItemDecoration extends RecyclerView.ItemDecoration {
 
     @Override
     public void onDrawOver(@NonNull Canvas c, @NonNull RecyclerView parent, @NonNull RecyclerView.State state) {
+
         int left = parent.getPaddingLeft();
         int right = parent.getWidth() - parent.getPaddingRight();
 
         int childCount = parent.getChildCount();
         for (int i = 0; i < childCount; i++) {
+
             View child = parent.getChildAt(i);
 
             RecyclerView.LayoutParams params = (RecyclerView.LayoutParams) child.getLayoutParams();

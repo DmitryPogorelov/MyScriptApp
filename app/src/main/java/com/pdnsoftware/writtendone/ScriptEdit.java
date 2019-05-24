@@ -6,7 +6,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
-import androidx.exifinterface.media.ExifInterface;
+import android.media.ExifInterface;
 import android.media.ThumbnailUtils;
 import android.os.Environment;
 import android.support.v4.app.FragmentManager;
@@ -16,8 +16,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
-import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -37,21 +35,18 @@ import java.util.Locale;
 
 public class ScriptEdit extends AppCompatActivity {
 
-    public EditText etScriptTitle, etScriptContent;
-    public Button saveButton, saveAndAddButton;
+    private EditText etScriptTitle, etScriptContent;
     private MyScriptDBManager myDB;
     private Context app_context;
 
-    int rowToUpdate = -1; //Идентификатор строки, которую будем обновлять
+    private int rowToUpdate = -1; //Идентификатор строки, которую будем обновлять
 
-    Intent currIntent = new Intent(); //Объект Intent для считывания данных из вызывающей формы
-    Bundle varSet; //объект для параметров вызывающей формы
+    private Intent currIntent = new Intent(); //Объект Intent для считывания данных из вызывающей формы
+    private Bundle varSet; //объект для параметров вызывающей формы
 
     //Константы для обозначения полей при передаче между формами
     public static final String TITLE_FIELD_CONTENT = "title_field_content";
     public static final String CONTENT_FIELD_CONTENT = "content_field_content";
-
-    public static final String NAME_INTENT_SCRIPTEDIT = "intent_ScriptEdit";
 
     //Константа для передачи идентификатора фоторгафии, которую нужно открывать, в форму PictureDisplay
     public static final String PICTIRE_ID = "pict_id";
@@ -60,17 +55,11 @@ public class ScriptEdit extends AppCompatActivity {
     private int[] addedPictIds;
 
     //Константа с результатом возврата картинки из галлереи
-    private static int RESULT_LOAD_IMAGE = 1;
-
-    //Константа для журнала
-    private static final String TAG = "MyScript-ScriptEditAct";
-
-    //Переменная для управления ActionBarом
-    private ActionBar currActionBar;
+    private static final int RESULT_LOAD_IMAGE = 1;
 
     //Переменная для установки отступов между картинками
-    int paddingDp = 4;
-    int paddingPixel = 0;
+    private final int paddingDp = 4;
+    private final int paddingPixel = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,8 +79,8 @@ public class ScriptEdit extends AppCompatActivity {
         etScriptTitle.addTextChangedListener(castFirstLetter);
         etScriptContent.addTextChangedListener(castFirstLetter);
 
-        saveButton = findViewById(R.id.saveButton);
-        saveAndAddButton = findViewById(R.id.saveAndAddButton);
+        Button saveButton = findViewById(R.id.saveButton);
+        Button saveAndAddButton = findViewById(R.id.saveAndAddButton);
 
         saveButton.setOnClickListener(seSaver);
         saveAndAddButton.setOnClickListener(seSaver);
@@ -104,7 +93,8 @@ public class ScriptEdit extends AppCompatActivity {
         }
 
         //Заводим ActionBar, чтобы на нем была стрелка назад
-        currActionBar = getSupportActionBar();
+        //Переменная для управления ActionBarом
+        ActionBar currActionBar = getSupportActionBar();
 
         if (currActionBar != null) {
             currActionBar.setDisplayHomeAsUpEnabled(true);
@@ -116,8 +106,10 @@ public class ScriptEdit extends AppCompatActivity {
 
             ScriptRecord recToEdit = myDB.getOneScript(rowToUpdate);
 
-            etScriptTitle.setText(recToEdit.getTitle());
-            etScriptContent.setText(recToEdit.getContent());
+            if (savedInstanceState == null) {
+                etScriptTitle.setText(recToEdit.getTitle());
+                etScriptContent.setText(recToEdit.getContent());
+            }
 
             if (currActionBar != null)
                 currActionBar.setTitle(R.string.headerEditTask);
@@ -131,88 +123,71 @@ public class ScriptEdit extends AppCompatActivity {
                 currActionBar.setTitle(R.string.headerNewTask);
         }
 
-        //Если произшел возврат из экрана с камерой
-        if (varSet != null && varSet.containsKey(MainActivity.CALLER_ACTIVITY_NAME)) {
-
-            String tempActivityName = "";
-            tempActivityName = varSet.getString(MainActivity.CALLER_ACTIVITY_NAME);
-
-            if (tempActivityName.equals(CameraView.NAME_INTENT_CAMERAVIEW)) {
-                //Восстановить значение полей
-                if (varSet.containsKey(ScriptEdit.TITLE_FIELD_CONTENT))
-                    etScriptTitle.setText(varSet.getString(ScriptEdit.TITLE_FIELD_CONTENT));
-
-                if (varSet.containsKey(ScriptEdit.CONTENT_FIELD_CONTENT))
-                    etScriptContent.setText(varSet.getString(ScriptEdit.CONTENT_FIELD_CONTENT));
-            }
-        }
-
         //Загружаем фотографии
         picturesLoad(rowToUpdate);
     }
 
-    private View.OnClickListener seSaver = new View.OnClickListener() {
+    private final View.OnClickListener seSaver = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            switch (v.getId()) {
-                case R.id.saveButton:
+        switch (v.getId()) {
+            case R.id.saveButton:
 
-                    if (rowToUpdate > 0) {
-                        ScriptRecord script = new ScriptRecord(rowToUpdate, etScriptTitle.getText().toString(), etScriptContent.getText().toString());
-                        //Проверяем запись на пустоту
-                        if (isEmptyScriptRecord(script)) {
-                            //Сообщаем пользователю о том, что он пытается сохранить пустую запись
-                            Toast.makeText(ScriptEdit.this, v.getResources().getString(R.string.emptyRecordWarning), Toast.LENGTH_LONG).show();
-                        }
-                        //Обновляем непустую запись
-                        if (!isEmptyScriptRecord(script)) {
-                            myDB.updateScript(script);
-                            finish();
-                        }
-                    }
-
-                    if (rowToUpdate <= 0) {
-                        ScriptRecord script = new ScriptRecord(0, etScriptTitle.getText().toString(), etScriptContent.getText().toString());
-                        //Проверяем запись на пустоту
-                        if (isEmptyScriptRecord(script)) {
-                            //Сообщаем пользователю о том, что он пытается сохранить пустую запись
-                            Toast.makeText(ScriptEdit.this, v.getResources().getString(R.string.emptyRecordWarning), Toast.LENGTH_LONG).show();
-                        }
-                        // Вставляем непустую запись
-                        if (!isEmptyScriptRecord(script)) {
-                            //Вставляем новую запись
-                            int insert_res = myDB.insertScript(script);
-                            //Проверяем, добавилась ли запись в БД
-                            if (insert_res != -1)
-                                //Запись добавлена успешно, закрываем окно
-                                finish();
-                            else
-                            {
-                                //Запись не добавлена. Выводим сообщение об ошибке
-                                Toast.makeText(ScriptEdit.this, v.getResources().getString(R.string.errorInIsert), Toast.LENGTH_LONG).show();
-                            }
-                        }
-                    }
-                    break;
-                case R.id.saveAndAddButton:
-                    //Сохраняем введенную запись
-                    ScriptRecord script = new ScriptRecord(0, etScriptTitle.getText().toString(), etScriptContent.getText().toString());
+                if (rowToUpdate > 0) {
+                    ScriptRecord script = new ScriptRecord(rowToUpdate, etScriptTitle.getText().toString(), etScriptContent.getText().toString());
+                    //Проверяем запись на пустоту
                     if (isEmptyScriptRecord(script)) {
                         //Сообщаем пользователю о том, что он пытается сохранить пустую запись
                         Toast.makeText(ScriptEdit.this, v.getResources().getString(R.string.emptyRecordWarning), Toast.LENGTH_LONG).show();
                     }
+                    //Обновляем непустую запись
                     if (!isEmptyScriptRecord(script)) {
-                        myDB.insertScript(script);
-                        //Оповещаем пользователя об успешном сохранении данных
-                        Toast.makeText(ScriptEdit.this, v.getResources().getString(R.string.recordAddedSuccess), Toast.LENGTH_LONG).show();
-                        //Очищаем поля
-                        rowToUpdate = -1;
-                        picturesLoad(rowToUpdate);
-                        etScriptTitle.setText("");
-                        etScriptContent.setText("");
+                        myDB.updateScript(script);
+                        finish();
                     }
-                    break;
-            }
+                }
+
+                if (rowToUpdate <= 0) {
+                    ScriptRecord script = new ScriptRecord(0, etScriptTitle.getText().toString(), etScriptContent.getText().toString());
+                    //Проверяем запись на пустоту
+                    if (isEmptyScriptRecord(script)) {
+                        //Сообщаем пользователю о том, что он пытается сохранить пустую запись
+                        Toast.makeText(ScriptEdit.this, v.getResources().getString(R.string.emptyRecordWarning), Toast.LENGTH_LONG).show();
+                    }
+                    // Вставляем непустую запись
+                    if (!isEmptyScriptRecord(script)) {
+                        //Вставляем новую запись
+                        int insert_res = myDB.insertScript(script);
+                        //Проверяем, добавилась ли запись в БД
+                        if (insert_res != -1)
+                            //Запись добавлена успешно, закрываем окно
+                            finish();
+                        else {
+                            //Запись не добавлена. Выводим сообщение об ошибке
+                            Toast.makeText(ScriptEdit.this, v.getResources().getString(R.string.errorInsert), Toast.LENGTH_LONG).show();
+                        }
+                    }
+                }
+            break;
+            case R.id.saveAndAddButton:
+                //Сохраняем введенную запись
+                ScriptRecord script = new ScriptRecord(0, etScriptTitle.getText().toString(), etScriptContent.getText().toString());
+                if (isEmptyScriptRecord(script)) {
+                    //Сообщаем пользователю о том, что он пытается сохранить пустую запись
+                    Toast.makeText(ScriptEdit.this, v.getResources().getString(R.string.emptyRecordWarning), Toast.LENGTH_LONG).show();
+                }
+                if (!isEmptyScriptRecord(script)) {
+                    myDB.insertScript(script);
+                    //Оповещаем пользователя об успешном сохранении данных
+                    Toast.makeText(ScriptEdit.this, v.getResources().getString(R.string.recordAddedSuccess), Toast.LENGTH_LONG).show();
+                    //Очищаем поля
+                    rowToUpdate = -1;
+                    picturesLoad(rowToUpdate);
+                    etScriptTitle.setText("");
+                    etScriptContent.setText("");
+                }
+            break;
+        }
         }
     };
 
@@ -224,30 +199,6 @@ public class ScriptEdit extends AppCompatActivity {
     }
 
     //*********************Добавляется меню*******************************
-
-    private ActionMode.Callback callback = new ActionMode.Callback() {
-        @Override
-        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
-            mode.getMenuInflater().inflate(R.menu.ma_menu, menu);
-            return true;
-        }
-
-        @Override
-        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
-            return false;
-        }
-
-        @Override
-        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
-            return false;
-        }
-
-        @Override
-        public void onDestroyActionMode(ActionMode mode) {
-            //Переменная для вызова меню
-            ActionMode actionMode = null;
-        }
-    };
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -282,11 +233,11 @@ public class ScriptEdit extends AppCompatActivity {
                     cameraIntent.setClass(getApplicationContext(), CameraView.class);
 
                     //Сохраняем в новый Intent все нужные значения
-                    if (varSet != null && varSet.containsKey(MyScriptDB.ROW_ID))
-                        cameraIntent.putExtra(MyScriptDB.ROW_ID, varSet.getInt(MyScriptDB.ROW_ID));
+                    if (rowToUpdate > 0)
+                        cameraIntent.putExtra(MyScriptDB.ROW_ID, rowToUpdate);
 
-                    cameraIntent.putExtra(ScriptEdit.TITLE_FIELD_CONTENT, etScriptTitle.getText().toString());
                     cameraIntent.putExtra(ScriptEdit.CONTENT_FIELD_CONTENT, etScriptContent.getText().toString());
+                    cameraIntent.putExtra(ScriptEdit.TITLE_FIELD_CONTENT, etScriptTitle.getText().toString());
 
                     startActivity(cameraIntent);
                 }
@@ -350,7 +301,7 @@ public class ScriptEdit extends AppCompatActivity {
             String pictPath;
             //Setting bitmap options to avoid missing of memory
             BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inSampleSize = 8;
+            options.inSampleSize = 4;
 
             freshBitmap1 = null;
             freshBitmap2 = null;
@@ -376,28 +327,27 @@ public class ScriptEdit extends AppCompatActivity {
             }
 
             //Рассчитываем размеры картинок
-            int pictWidth, pictHight;
+            int pictWidth, pictHeight;
             int pictHeightInDp = 200;
+
+            pictHeight = pictHeightInDp * (int)app_context.getResources().getDisplayMetrics().density;
+
             if (recPictures.size() == 1) {
 
                 pictWidth = app_context.getResources().getDisplayMetrics().widthPixels;
-                pictHight = pictHeightInDp * (int)app_context.getResources().getDisplayMetrics().density;
 
             } else if (recPictures.size() == 2) {
 
                 pictWidth = app_context.getResources().getDisplayMetrics().widthPixels/2 -
                         (int)app_context.getResources().getDisplayMetrics().density * paddingDp;
-                pictHight =  pictHeightInDp * (int)app_context.getResources().getDisplayMetrics().density;
 
             } else if (recPictures.size() == 3) {
 
                 pictWidth = (app_context.getResources().getDisplayMetrics().widthPixels -
                         4 * (int)app_context.getResources().getDisplayMetrics().density * paddingDp)/3;
 
-                pictHight =  pictHeightInDp * (int)app_context.getResources().getDisplayMetrics().density;
-
             } else {
-                pictWidth = pictHight = 1;
+                pictWidth = pictHeight = 1;
             }
 
             for (int i = 0; i < recPictures.size(); i++) {
@@ -423,13 +373,18 @@ public class ScriptEdit extends AppCompatActivity {
                         }
 
                         if (freshBitmap1 != null) {
-                            fragment.setPicture1(ThumbnailUtils.extractThumbnail(freshBitmap1, pictWidth, pictHight,
+                            fragment.setPicture1(ThumbnailUtils.extractThumbnail(freshBitmap1, pictWidth, pictHeight,
                                     ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
+                            if (myBitmap1 != null)
+                                myBitmap1.recycle();
                         }
                         else {
-                            if (myBitmap1 != null)
-                                fragment.setPicture1(ThumbnailUtils.extractThumbnail(myBitmap1, pictWidth, pictHight,
-                                    ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
+                            if (myBitmap1 != null) {
+                                fragment.setPicture1(ThumbnailUtils.extractThumbnail(myBitmap1, pictWidth, pictHeight,
+                                        ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
+                                if (freshBitmap1 != null)
+                                    freshBitmap1.recycle();
+                            }
                         }
 
                         fragment.pict1.setOnClickListener(openFullPicture);
@@ -449,11 +404,11 @@ public class ScriptEdit extends AppCompatActivity {
                         }
 
                         if (freshBitmap2 != null) {
-                            fragment.setPicture2(ThumbnailUtils.extractThumbnail(freshBitmap2, pictWidth, pictHight,
+                            fragment.setPicture2(ThumbnailUtils.extractThumbnail(freshBitmap2, pictWidth, pictHeight,
                                     ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
                         }
                         else {
-                            if (myBitmap2 != null) fragment.setPicture2(ThumbnailUtils.extractThumbnail(myBitmap2, pictWidth, pictHight,
+                            if (myBitmap2 != null) fragment.setPicture2(ThumbnailUtils.extractThumbnail(myBitmap2, pictWidth, pictHeight,
                                     ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
                         }
 
@@ -475,11 +430,11 @@ public class ScriptEdit extends AppCompatActivity {
                         }
 
                         if (freshBitmap3 != null) {
-                            fragment.setPicture3(ThumbnailUtils.extractThumbnail(freshBitmap3, pictWidth, pictHight,
+                            fragment.setPicture3(ThumbnailUtils.extractThumbnail(freshBitmap3, pictWidth, pictHeight,
                                     ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
                         }
                         else {
-                            if (myBitmap3 != null) fragment.setPicture3(ThumbnailUtils.extractThumbnail(myBitmap3, pictWidth, pictHight,
+                            if (myBitmap3 != null) fragment.setPicture3(ThumbnailUtils.extractThumbnail(myBitmap3, pictWidth, pictHeight,
                                     ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
                         }
 
@@ -512,7 +467,7 @@ public class ScriptEdit extends AppCompatActivity {
                 float density = app_context.getResources().getDisplayMetrics().density;
                 int paddingPixel = (int)(paddingDp * density);
                 fragment.pict1.setPadding(0, 0, paddingPixel, paddingPixel);
-                fragment.pict2.setPadding(paddingPixel, 0, paddingPixel, paddingPixel);
+                fragment.pict2.setPadding(paddingPixel/2, 0, paddingPixel/2, paddingPixel);
                 fragment.pict3.setPadding(paddingPixel, 0, 0, paddingPixel);
             }
 
@@ -542,42 +497,35 @@ public class ScriptEdit extends AppCompatActivity {
 
         if (varSet != null && varSet.containsKey(MyScriptDB.ROW_ID))
             rowToUpdate = varSet.getInt(MyScriptDB.ROW_ID);  //Загружаем rowId, если он передан
-
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
 
-
         if (app_context == null)
             app_context = getApplicationContext();
 
         varSet = intent.getExtras();
 
-        if (varSet != null)  {
+        if (varSet != null) {
 
-            if (varSet.containsKey(MainActivity.CALLER_ACTIVITY_NAME) &&
-                    varSet.getString(MainActivity.CALLER_ACTIVITY_NAME).equals(CameraView.NAME_INTENT_CAMERAVIEW)) {
+            if (varSet.containsKey(ScriptEdit.TITLE_FIELD_CONTENT))
+                etScriptTitle.setText(varSet.getString(ScriptEdit.TITLE_FIELD_CONTENT));
 
-                if (varSet.containsKey(ScriptEdit.TITLE_FIELD_CONTENT))
-                    etScriptTitle.setText(varSet.getString(ScriptEdit.TITLE_FIELD_CONTENT));
-
-                if (varSet.containsKey(ScriptEdit.CONTENT_FIELD_CONTENT))
-                    etScriptContent.setText(varSet.getString(ScriptEdit.CONTENT_FIELD_CONTENT));
-            }
+            if (varSet.containsKey(ScriptEdit.CONTENT_FIELD_CONTENT))
+                etScriptContent.setText(varSet.getString(ScriptEdit.CONTENT_FIELD_CONTENT));
 
             //Загружаем row_id, если он был передан
             if (varSet.containsKey(MyScriptDB.ROW_ID))
                 rowToUpdate = varSet.getInt(MyScriptDB.ROW_ID);
         }
 
-
         //Загружаем фотографии
         picturesLoad(rowToUpdate);
     }
 
-    public View.OnClickListener openFullPicture = new View.OnClickListener() {
+    public final View.OnClickListener openFullPicture = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
 
@@ -586,13 +534,6 @@ public class ScriptEdit extends AppCompatActivity {
 
             PictureDisplayIntent.setClass(getApplicationContext(), PictureDisplay.class);
             //Сохраняем в новый Intent все нужные значения
-            if (varSet != null && varSet.containsKey(MyScriptDB.ROW_ID))
-                PictureDisplayIntent.putExtra(MyScriptDB.ROW_ID, varSet.getInt(MyScriptDB.ROW_ID));
-
-
-            PictureDisplayIntent.putExtra(MainActivity.CALLER_ACTIVITY_NAME, ScriptEdit.NAME_INTENT_SCRIPTEDIT);
-            PictureDisplayIntent.putExtra(ScriptEdit.TITLE_FIELD_CONTENT, etScriptTitle.getText().toString());
-            PictureDisplayIntent.putExtra(ScriptEdit.CONTENT_FIELD_CONTENT, etScriptContent.getText().toString());
 
             switch (v.getId()) {
                 case R.id.pict1:
@@ -633,7 +574,6 @@ public class ScriptEdit extends AppCompatActivity {
 
                     InputStream inputStream = this.getContentResolver().openInputStream(data.getData());
 
-
                     FileOutputStream fileOutputStream = new FileOutputStream(photoFile);
                     // Copying
                     if (inputStream != null)
@@ -670,7 +610,6 @@ public class ScriptEdit extends AppCompatActivity {
                             varSet.putInt(MyScriptDB.ROW_ID, rowToUpdate);
                         }
                     }
-
 
                 }
                 else
@@ -717,7 +656,7 @@ public class ScriptEdit extends AppCompatActivity {
     }
 
     //обработчик ввода данных для того, чтобы заменять первые буквы на большие
-    private TextWatcher castFirstLetter = new TextWatcher() {
+    private final TextWatcher castFirstLetter = new TextWatcher() {
         @Override
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 
@@ -753,13 +692,9 @@ public class ScriptEdit extends AppCompatActivity {
     public void onSaveInstanceState(Bundle savedInstanceState) {
         super.onSaveInstanceState(savedInstanceState);
 
-        if (rowToUpdate > 0) {
-            savedInstanceState.putInt(MyScriptDB.ROW_ID, rowToUpdate);
-        }
-
+        savedInstanceState.putInt(MyScriptDB.ROW_ID, rowToUpdate);
         savedInstanceState.putString(ScriptEdit.TITLE_FIELD_CONTENT, etScriptTitle.getText().toString());
         savedInstanceState.putString(ScriptEdit.CONTENT_FIELD_CONTENT, etScriptContent.getText().toString());
-
     }
 
     //Функция для поворота картинки
