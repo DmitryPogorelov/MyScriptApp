@@ -75,7 +75,7 @@ class MyScriptDBManager {
         ScriptRecord ret_script = new ScriptRecord(-1,"","", "", 0, "");
 
         openDBRead();
-        String where = String.format(Locale.US, "%s=%d", MyScriptDB.ROW_ID, scriptId); //Указываем id строки для чтения
+        String where = String.format(Locale.getDefault(), "%s=%d", MyScriptDB.ROW_ID, scriptId); //Указываем id строки для чтения
         Cursor cursor = db.query(TABLE_SCRIPTS, null, where, null, null, null, null);
         if (cursor != null && cursor.getCount() == 1) {
             cursor.moveToFirst();
@@ -108,7 +108,7 @@ class MyScriptDBManager {
         insert_row.put(MyScriptDB.SCRIPTS_TITLE, sr.getTitle());
         insert_row.put(MyScriptDB.SCRIPTS_CONTENT, sr.getContent());
         //Добавляем текущую дату
-        DateFormat df = new SimpleDateFormat(MyScriptDB.DB_DATETIME_FORMAT, Locale.US);
+        DateFormat df = new SimpleDateFormat(MyScriptDB.DB_DATETIME_FORMAT, Locale.getDefault());
         Calendar calendar = Calendar.getInstance();
         String curr_date = df.format(calendar.getTime());
         insert_row.put(MyScriptDB.SCRIPTS_CREATED_DATE, curr_date);
@@ -131,7 +131,7 @@ class MyScriptDBManager {
         update_row.put(MyScriptDB.SCRIPTS_TITLE, sr.getTitle());
         update_row.put(MyScriptDB.SCRIPTS_CONTENT, sr.getContent());
 
-        String where = String.format(Locale.US, "%s=%d", MyScriptDB.ROW_ID, sr.getRowId()); //Указываем id строки для обновления
+        String where = String.format(Locale.getDefault(), "%s=%d", MyScriptDB.ROW_ID, sr.getRowId()); //Указываем id строки для обновления
 
         int result = db.update(TABLE_SCRIPTS, update_row, where, null);
         closeDB();
@@ -143,7 +143,7 @@ class MyScriptDBManager {
         deletePictureRecordByScriptId(rowId);
 
         openDBWrite();
-        String where = String.format(Locale.US, "%s=%d", MyScriptDB.ROW_ID, rowId);
+        String where = String.format(Locale.getDefault(), "%s=%d", MyScriptDB.ROW_ID, rowId);
         int result = db.delete(TABLE_SCRIPTS, where, null);
         closeDB();
 
@@ -161,7 +161,7 @@ class MyScriptDBManager {
         insert_row.put(MyScriptDB.PICTURES_PICTURE_FILENAME, fileName);
 
         //Добавляем текущую дату
-        DateFormat df = new SimpleDateFormat(MyScriptDB.DB_DATETIME_FORMAT, Locale.US);
+        DateFormat df = new SimpleDateFormat(MyScriptDB.DB_DATETIME_FORMAT, Locale.getDefault());
         Calendar calendar = Calendar.getInstance();
         String curr_date = df.format(calendar.getTime());
         insert_row.put(MyScriptDB.PICTURES_CREATED_DATE, curr_date);
@@ -254,7 +254,7 @@ class MyScriptDBManager {
         if (fileDelResult) {
             //Вносим изменения в базу
             openDBWrite();
-            String where = String.format(Locale.US, "%s=%d", MyScriptDB.ROW_ID, pictureId);
+            String where = String.format(Locale.getDefault(), "%s=%d", MyScriptDB.ROW_ID, pictureId);
             dbRecDeleteResult = db.delete(MyScriptDB.TABLE_PICTURES, where, null);
 
             closeDB();
@@ -353,7 +353,7 @@ class MyScriptDBManager {
 
         update_row.put(MyScriptDB.SCRIPTS_PICTCOUNT, pictCount);
 
-        String where = String.format(Locale.US, "%s=%d", MyScriptDB.ROW_ID, scriptId); //Указываем id строки для обновления
+        String where = String.format(Locale.getDefault(), "%s=%d", MyScriptDB.ROW_ID, scriptId); //Указываем id строки для обновления
 
         openDBWrite();
         db.update(TABLE_SCRIPTS, update_row, where, null);

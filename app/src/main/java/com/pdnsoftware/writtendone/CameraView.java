@@ -12,7 +12,6 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
@@ -287,7 +286,7 @@ public class CameraView extends AppCompatActivity {
     }
     //Создаем галлерею
     private void createImageGallery() {
-        File storageDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+        File storageDirectory = getApplicationContext().getDir("PICTURES", Context.MODE_PRIVATE);
         galleryFolder = new File(storageDirectory, getResources().getString(R.string.app_name));
         if (!galleryFolder.exists()) {
             boolean wasCreated = galleryFolder.mkdirs();

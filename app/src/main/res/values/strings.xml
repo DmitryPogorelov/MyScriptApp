@@ -17,6 +17,7 @@
     <string name="row_layout_trashcan_desc">Delete task</string>
     <string name="row_layout_pict_quantity">3</string>
     <string name="row_layout_paperclip">Paperclip</string>
+    <string name="row_layout_pict_thumbnail">Attached picture</string>
 
     //Ошибки и предупреждения
     <string name="emptyRecordWarning">Empty task can\'t be saved!</string>

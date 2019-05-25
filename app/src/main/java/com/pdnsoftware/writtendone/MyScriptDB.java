@@ -137,7 +137,7 @@ class MyScriptDB extends SQLiteOpenHelper {
 
                         update_row.put(MyScriptDB.SCRIPTS_PICTCOUNT, pictCursor.getInt(pictAmountIndex));
 
-                        where = String.format(Locale.US, "%s=%d", MyScriptDB.ROW_ID, scriptId); //Указываем id строки для обновления
+                        where = String.format(Locale.getDefault(), "%s=%d", MyScriptDB.ROW_ID, scriptId); //Указываем id строки для обновления
 
                         db.update(MyScriptDB.TABLE_SCRIPTS, update_row, where, null);
                     }
@@ -146,7 +146,7 @@ class MyScriptDB extends SQLiteOpenHelper {
 
                         update_row.put(MyScriptDB.SCRIPTS_PICTCOUNT, 0);
 
-                        where = String.format(Locale.US, "%s=%d", MyScriptDB.ROW_ID, scriptId); //Указываем id строки для обновления
+                        where = String.format(Locale.getDefault(), "%s=%d", MyScriptDB.ROW_ID, scriptId); //Указываем id строки для обновления
 
                         db.update(MyScriptDB.TABLE_SCRIPTS, update_row, where, null);
                     }

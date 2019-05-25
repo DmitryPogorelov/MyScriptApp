@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
         currActionBar = getSupportActionBar();
         if (currActionBar != null) {
             int taskCount = myDB.getTasksCount();
-            currActionBar.setTitle(String.format(Locale.US, getResources().getString(R.string.mainActivitySign) + " (%s)", taskCount));
+            currActionBar.setTitle(String.format(Locale.getDefault(), getResources().getString(R.string.mainActivitySign) + " (%s)", taskCount));
         }
 
         recyclerView = findViewById(R.id.task_list);
@@ -59,9 +59,15 @@ public class MainActivity extends AppCompatActivity {
         // specify an adapter (see also next example)
         curr_adapter = new MyRecViewAdapter(test_data);
 
+        curr_adapter.setActivity(this);
+
         //Наводим красоту
         recyclerView.setAdapter(curr_adapter);
         recyclerView.addItemDecoration(new SimpleDividerItemDecoration(this));
+    }
+
+    public void taskCountRefresh() {
+        //Заводим ActionBar, чтобы на нем была стрелка назад и количество задач
     }
 
     @Override
@@ -92,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
         //Обновляем количество задач в ActionBar
         if (currActionBar != null) {
             int taskCount = myDB.getTasksCount();
-            currActionBar.setTitle(String.format(Locale.US, getResources().getString(R.string.mainActivitySign) + " (%s)", taskCount));
+            currActionBar.setTitle(String.format(Locale.getDefault(), getResources().getString(R.string.mainActivitySign) + " (%s)", taskCount));
         }
     }
 }

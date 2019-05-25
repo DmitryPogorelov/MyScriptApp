@@ -8,7 +8,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.media.ThumbnailUtils;
-import android.os.Environment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.ActionBar;
@@ -22,6 +21,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
+
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -61,6 +62,12 @@ public class ScriptEdit extends AppCompatActivity {
     private final int paddingDp = 4;
     private final int paddingPixel = 0;
 
+    //Actionbar
+    ActionBar currActionBar;
+
+    //Кнопка "Сохранить и добавить"
+    Button saveAndAddButton;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -80,7 +87,7 @@ public class ScriptEdit extends AppCompatActivity {
         etScriptContent.addTextChangedListener(castFirstLetter);
 
         Button saveButton = findViewById(R.id.saveButton);
-        Button saveAndAddButton = findViewById(R.id.saveAndAddButton);
+        saveAndAddButton = findViewById(R.id.saveAndAddButton);
 
         saveButton.setOnClickListener(seSaver);
         saveAndAddButton.setOnClickListener(seSaver);
@@ -94,7 +101,7 @@ public class ScriptEdit extends AppCompatActivity {
 
         //Заводим ActionBar, чтобы на нем была стрелка назад
         //Переменная для управления ActionBarом
-        ActionBar currActionBar = getSupportActionBar();
+        currActionBar = getSupportActionBar();
 
         if (currActionBar != null) {
             currActionBar.setDisplayHomeAsUpEnabled(true);
@@ -113,9 +120,6 @@ public class ScriptEdit extends AppCompatActivity {
 
             if (currActionBar != null)
                 currActionBar.setTitle(R.string.headerEditTask);
-
-            //Делаем кнопку "Сохранить и добавить еще невидимой"
-            saveAndAddButton.setVisibility(View.INVISIBLE);
         }
         else
         {
@@ -171,29 +175,46 @@ public class ScriptEdit extends AppCompatActivity {
             break;
             case R.id.saveAndAddButton:
                 //Сохраняем введенную запись
-                ScriptRecord script = new ScriptRecord(0, etScriptTitle.getText().toString(), etScriptContent.getText().toString());
-                if (isEmptyScriptRecord(script)) {
-                    //Сообщаем пользователю о том, что он пытается сохранить пустую запись
-                    Toast.makeText(ScriptEdit.this, v.getResources().getString(R.string.emptyRecordWarning), Toast.LENGTH_LONG).show();
+                if (rowToUpdate <= 0) {
+                    ScriptRecord script = new ScriptRecord(0, etScriptTitle.getText().toString(), etScriptContent.getText().toString());
+                    if (isEmptyScriptRecord(script)) {
+                        //Сообщаем пользователю о том, что он пытается сохранить пустую запись
+                        Toast.makeText(ScriptEdit.this, v.getResources().getString(R.string.emptyRecordWarning), Toast.LENGTH_LONG).show();
+                    }
+                    if (!isEmptyScriptRecord(script)) {
+                        myDB.insertScript(script);
+                        //Оповещаем пользователя об успешном сохранении данных
+                        Toast.makeText(ScriptEdit.this, v.getResources().getString(R.string.recordAddedSuccess), Toast.LENGTH_LONG).show();
+
+                    }
                 }
-                if (!isEmptyScriptRecord(script)) {
-                    myDB.insertScript(script);
-                    //Оповещаем пользователя об успешном сохранении данных
-                    Toast.makeText(ScriptEdit.this, v.getResources().getString(R.string.recordAddedSuccess), Toast.LENGTH_LONG).show();
-                    //Очищаем поля
-                    rowToUpdate = -1;
-                    picturesLoad(rowToUpdate);
-                    etScriptTitle.setText("");
-                    etScriptContent.setText("");
+                else
+                {
+                    ScriptRecord script = new ScriptRecord(rowToUpdate, etScriptTitle.getText().toString(), etScriptContent.getText().toString());
+                    //Проверяем запись на пустоту
+                    if (isEmptyScriptRecord(script)) {
+                        //Сообщаем пользователю о том, что он пытается сохранить пустую запись
+                        Toast.makeText(ScriptEdit.this, v.getResources().getString(R.string.emptyRecordWarning), Toast.LENGTH_LONG).show();
+                    }
+                    //Обновляем непустую запись
+                    if (!isEmptyScriptRecord(script)) {
+                        myDB.updateScript(script);
+                    }
                 }
+
+                //Очищаем поля
+                rowToUpdate = -1;
+                picturesLoad(rowToUpdate);
+                etScriptTitle.setText("");
+                etScriptContent.setText("");
             break;
         }
         }
     };
 
-    private boolean isEmptyScriptRecord (ScriptRecord sr) {
+    private boolean isEmptyScriptRecord (@NotNull ScriptRecord sr) {
         boolean flag = false;
-        if (sr.getTitle().isEmpty() && sr.getContent().isEmpty())
+        if (sr.getTitle().isEmpty() && sr.getContent().isEmpty() && rowToUpdate < 0)
             flag = true;
         return flag;
     }
@@ -352,7 +373,6 @@ public class ScriptEdit extends AppCompatActivity {
 
             for (int i = 0; i < recPictures.size(); i++) {
 
-
                 pictPath = recPictures.get(i).getPicturePath() + "/" + recPictures.get(i).getPictureName();
 
                 imgFile = new File(pictPath);
@@ -382,8 +402,6 @@ public class ScriptEdit extends AppCompatActivity {
                             if (myBitmap1 != null) {
                                 fragment.setPicture1(ThumbnailUtils.extractThumbnail(myBitmap1, pictWidth, pictHeight,
                                         ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
-                                if (freshBitmap1 != null)
-                                    freshBitmap1.recycle();
                             }
                         }
 
@@ -523,11 +541,17 @@ public class ScriptEdit extends AppCompatActivity {
 
         //Загружаем фотографии
         picturesLoad(rowToUpdate);
+
+        if (rowToUpdate > 0) {
+
+            if (currActionBar != null)
+                currActionBar.setTitle(R.string.headerEditTask);
+        }
     }
 
     public final View.OnClickListener openFullPicture = new View.OnClickListener() {
         @Override
-        public void onClick(View v) {
+        public void onClick(@NotNull View v) {
 
             //Открываем Activity PictureDisplay для просмотра фотографии
             Intent PictureDisplayIntent = new Intent();
@@ -610,6 +634,12 @@ public class ScriptEdit extends AppCompatActivity {
                             varSet.putInt(MyScriptDB.ROW_ID, rowToUpdate);
                         }
                     }
+                    //обновляем ActionBar и кнопку
+                    if (rowToUpdate > 0) {
+
+                        if (currActionBar != null)
+                            currActionBar.setTitle(R.string.headerEditTask);
+                    }
 
                 }
                 else
@@ -628,7 +658,7 @@ public class ScriptEdit extends AppCompatActivity {
 
     private File createImageFile() throws IOException {
         // Create an image file name
-        File storageDirectory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+        File storageDirectory = getApplicationContext().getDir("PICTURES", Context.MODE_PRIVATE);
         File galleryFolder = new File(storageDirectory, getResources().getString(R.string.app_name));
 
         if (!galleryFolder.exists()) {
@@ -647,7 +677,7 @@ public class ScriptEdit extends AppCompatActivity {
         );
     }
 
-    public static void copyStream(InputStream input, OutputStream output) throws IOException {
+    public static void copyStream(@NotNull InputStream input, OutputStream output) throws IOException {
         byte[] buffer = new byte[1024];
         int bytesRead;
         while ((bytesRead = input.read(buffer)) != -1) {
