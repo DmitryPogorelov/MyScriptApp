@@ -6,6 +6,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Html;
 import android.view.Menu;
 import android.view.MenuItem;
 import java.util.ArrayList;
@@ -27,6 +28,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
             getMenuInflater().inflate(R.menu.ma_menu, menu);
+
+            menu.getItem(1).setTitle(Html.fromHtml(getResources().getString(R.string.linkToPrivacyPolicy)));
         return true;
     }
 

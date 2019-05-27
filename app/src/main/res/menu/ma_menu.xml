@@ -10,6 +10,10 @@
         app:showAsAction="always"
     android:title="@string/addnewscript_sign" />
     <item
+        android:id="@+id/goToPrivacyPolicy"
+        android:orderInCategory="90"
+        android:title="@string/linkToPrivacyPolicy" />
+    <item
         android:id="@+id/quitApp"
         android:orderInCategory="99"
         android:title="@string/quitSign" />

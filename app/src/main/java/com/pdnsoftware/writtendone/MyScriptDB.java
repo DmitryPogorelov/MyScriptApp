@@ -10,7 +10,7 @@ import java.util.Locale;
 class MyScriptDB extends SQLiteOpenHelper {
 
     private static final String DB_MYSCRIPT = "myscript_db.db";
-    private static final Integer DB_VERSION = 5;
+    private static final Integer DB_VERSION = 1;
 
     //Таблица scripts - в ней хранятся основные записи задач
     static final String TABLE_SCRIPTS = "scripts";
@@ -88,79 +88,6 @@ class MyScriptDB extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if (oldVersion < 2) {
-            db.execSQL("ALTER TABLE " + TABLE_SCRIPTS + " ADD COLUMN " + SCRIPTS_CREATED_DATE + " TEXT;");
-            db.execSQL("ALTER TABLE " + TABLE_SCRIPTS + " ADD COLUMN " + SCRIPTS_FINISHED + " INTEGER;");
-            db.execSQL("ALTER TABLE " + TABLE_SCRIPTS + " ADD COLUMN " + SCRIPTS_FINISH_DATE + " TEXT;");
-        }
-        if (oldVersion < 3) {
-            db.execSQL("CREATE TABLE " + TABLE_PICTURES
-                    + " (_id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                    + PICTURES_SCRIPT_ID + " INTEGER, "
-                    + PICTURES_PICTURE_PATH + " TEXT, "
-                    + PICTURES_PICTURE_FILENAME + " TEXT, "
-                    + PICTURES_CREATED_DATE + " TEXT);"
-            );
-        }
-        if (oldVersion < 4) {
-            db.execSQL("ALTER TABLE " + TABLE_SCRIPTS + " ADD COLUMN " + SCRIPTS_PICTCOUNT + " INTEGER;");
 
-            //Для каждой записи о задаче считаем количество картинок и ставим в основную таблицу
-            Cursor cursor = db.rawQuery("SELECT " + MyScriptDB.ROW_ID + " FROM " + MyScriptDB.TABLE_SCRIPTS,
-                    null);
-
-            Cursor pictCursor = null;
-            String getPictCountSQL = "SELECT COUNT(*) AS PICT_COUNT FROM "
-                    + MyScriptDB.TABLE_PICTURES + " WHERE " + PICTURES_SCRIPT_ID + " = ?";
-
-            int scriptId, pictAmountIndex;
-            String where;
-            ContentValues update_row;
-
-            if (cursor != null && cursor.getCount() > 0) {
-
-                cursor.moveToFirst();
-
-                int idColumnIndex = cursor.getColumnIndex(MyScriptDB.ROW_ID);
-
-                while (cursor.moveToNext()) {
-                    // Используем индекс для получения строки или числа
-                    scriptId = cursor.getInt(idColumnIndex);
-                    pictCursor = db.rawQuery(getPictCountSQL,
-                            new String[] {Integer.toString(scriptId)});
-
-                    if (pictCursor != null && pictCursor.getCount() == 1) {
-                        pictAmountIndex = pictCursor.getColumnIndex("PICT_COUNT");
-                        pictCursor.moveToFirst();
-
-                        update_row = new ContentValues(1); //Создаем строку со значениями для обновления
-
-                        update_row.put(MyScriptDB.SCRIPTS_PICTCOUNT, pictCursor.getInt(pictAmountIndex));
-
-                        where = String.format(Locale.getDefault(), "%s=%d", MyScriptDB.ROW_ID, scriptId); //Указываем id строки для обновления
-
-                        db.update(MyScriptDB.TABLE_SCRIPTS, update_row, where, null);
-                    }
-                    else {
-                        update_row = new ContentValues(1); //Создаем строку со значениями для обновления
-
-                        update_row.put(MyScriptDB.SCRIPTS_PICTCOUNT, 0);
-
-                        where = String.format(Locale.getDefault(), "%s=%d", MyScriptDB.ROW_ID, scriptId); //Указываем id строки для обновления
-
-                        db.update(MyScriptDB.TABLE_SCRIPTS, update_row, where, null);
-                    }
-
-                }
-            }
-            if (cursor != null) cursor.close();
-            if (pictCursor != null) pictCursor.close();
-
-        }
-        //В пятой версии добавилось поле thumbnail в таблицу фотографий
-        if (oldVersion < 5) {
-            db.execSQL("ALTER TABLE " + TABLE_PICTURES + " ADD COLUMN " + PICTURES_THUMBNAIL + " TEXT;");
-
-        }
     }
 }

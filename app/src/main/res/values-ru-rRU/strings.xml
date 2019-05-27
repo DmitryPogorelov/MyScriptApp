@@ -4,6 +4,7 @@
     <string name="picture_folder">pictures</string>
     <string name="thumbnail_folder">thumbnails</string>
     <string name="mainActivitySign">Список задач</string>
+    <string name="linkToPrivacyPolicy"><a href='https://dmitrypogorelov.github.io/privacy_policy_written_done_ru.html'>Политика конфиденциальности</a></string>
 
     <string name="save_button">Сохранить</string>
     <string name="saveAndAddButtonText">Сохранить и добавить еще</string>
