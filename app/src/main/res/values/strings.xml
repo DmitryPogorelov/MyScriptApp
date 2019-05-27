@@ -4,7 +4,8 @@
     <string name="picture_folder">pictures</string>
     <string name="thumbnail_folder">thumbnails</string>
     <string name="mainActivitySign">Task list</string>
-    <string name="linkToPrivacyPolicy"><a href='https://dmitrypogorelov.github.io/privacy_policy_written_done_en.html'>Privacy policy</a></string>
+    <string name="textToPrivacyPolicy">Privacy policy</string>
+    <string name="linkToPrivacyPolicy">https://dmitrypogorelov.github.io/privacy_policy_written_done_en.html</string>
 
     <string name="save_button">Save</string>
     <string name="saveAndAddButtonText">Save and add more</string>
