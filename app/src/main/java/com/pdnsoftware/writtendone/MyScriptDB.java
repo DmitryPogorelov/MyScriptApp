@@ -5,13 +5,12 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-
 import java.util.Locale;
 
 class MyScriptDB extends SQLiteOpenHelper {
 
     private static final String DB_MYSCRIPT = "myscript_db.db";
-    private static final Integer DB_VERSION = 4;
+    private static final Integer DB_VERSION = 5;
 
     //Таблица scripts - в ней хранятся основные записи задач
     static final String TABLE_SCRIPTS = "scripts";
@@ -29,11 +28,11 @@ class MyScriptDB extends SQLiteOpenHelper {
     static final String TABLE_PICTURES = "pictures";
     //public static final String ROW_ID = "_id"; - Не задаем повторно, т.к. константа уже объявлена,
     // но этот столбец есть в таблице
-    static final String PICTURES_SCRIPT_ID = "script_id";
-    static final String PICTURES_PICTURE_PATH = "picture_path";
-    static final String PICTURES_PICTURE_FILENAME = "picture_filename";
-    static final String PICTURES_CREATED_DATE = "createddate";
-
+    static final String PICTURES_SCRIPT_ID          = "script_id";
+    static final String PICTURES_PICTURE_PATH       = "picture_path";
+    static final String PICTURES_PICTURE_FILENAME   = "picture_filename";
+    static final String PICTURES_CREATED_DATE       = "createddate";
+    static final String PICTURES_THUMBNAIL          = "thumbnail";
 
     static final String DB_DATETIME_FORMAT;
 
@@ -70,7 +69,8 @@ class MyScriptDB extends SQLiteOpenHelper {
                 + PICTURES_SCRIPT_ID + " INTEGER, "
                 + PICTURES_PICTURE_PATH + " TEXT, "
                 + PICTURES_PICTURE_FILENAME + " TEXT, "
-                + PICTURES_CREATED_DATE + " TEXT);"
+                + PICTURES_CREATED_DATE + " TEXT, "
+                + PICTURES_THUMBNAIL + " TEXT);"
         );
 
         // Вставляем тестовые данные
@@ -78,7 +78,7 @@ class MyScriptDB extends SQLiteOpenHelper {
 
         insert_row.put(SCRIPTS_TITLE, "Test record header");
         insert_row.put(SCRIPTS_CONTENT, "Test record content!");
-        insert_row.put(SCRIPTS_CREATED_DATE, "");
+        insert_row.put(SCRIPTS_CREATED_DATE, "26.12.2014 08:15");
         insert_row.put(SCRIPTS_FINISHED, MARK_AS_OPENED);
         insert_row.put(SCRIPTS_FINISH_DATE, "");
         insert_row.put(SCRIPTS_PICTCOUNT, 0);
@@ -155,6 +155,11 @@ class MyScriptDB extends SQLiteOpenHelper {
             }
             if (cursor != null) cursor.close();
             if (pictCursor != null) pictCursor.close();
+
+        }
+        //В пятой версии добавилось поле thumbnail в таблицу фотографий
+        if (oldVersion < 5) {
+            db.execSQL("ALTER TABLE " + TABLE_PICTURES + " ADD COLUMN " + PICTURES_THUMBNAIL + " TEXT;");
 
         }
     }

@@ -22,8 +22,6 @@ public class MainActivity extends AppCompatActivity {
     public static final String CALLER_ACTIVITY_NAME = "caller_activity_name";
     public static final String NAME_INTENT_MAINACTIVITY = "intent_MainActivity";
     /************************************************************************/
-    private RecyclerView recyclerView;
-    /************************************************************************/
     private ActionBar currActionBar;
 
     @Override
@@ -46,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
             currActionBar.setTitle(String.format(Locale.getDefault(), getResources().getString(R.string.mainActivitySign) + " (%s)", taskCount));
         }
 
-        recyclerView = findViewById(R.id.task_list);
+        RecyclerView recyclerView = findViewById(R.id.task_list);
 
         // use a linear layout manager
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
@@ -64,10 +62,6 @@ public class MainActivity extends AppCompatActivity {
         //Наводим красоту
         recyclerView.setAdapter(curr_adapter);
         recyclerView.addItemDecoration(new SimpleDividerItemDecoration(this));
-    }
-
-    public void taskCountRefresh() {
-        //Заводим ActionBar, чтобы на нем была стрелка назад и количество задач
     }
 
     @Override

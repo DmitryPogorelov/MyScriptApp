@@ -1,5 +1,8 @@
 <resources>
     <string name="app_name">Written Done</string>
+    <string name="app_folder">WrittenDone</string>
+    <string name="picture_folder">pictures</string>
+    <string name="thumbnail_folder">thumbnails</string>
     <string name="mainActivitySign">Task list</string>
 
     <string name="save_button">Save</string>
@@ -7,6 +10,7 @@
     <string name="headerNewTask">New task</string>
     <string name="headerEditTask">Edit Task</string>
     <string name="deleteTaskQuestion">Delete task</string>
+    <string name="deleteNoNameTaskQuestion">Delete this task?</string>
     <string name="deleteTaskYes">Delete</string>
     <string name="deleteTaskCancel">Cancel</string>
     <string name="recordAddedSuccess">Task added successfully!</string>
@@ -26,6 +30,8 @@
     <string name="photoNotAddedToDBError">Failed to add photo!</string>
     <string name="fileNotCopied">Failed to copy the file!</string>
     <string name="tooMatchPictures">Task can have up to 3 pictures!</string>
+    <string name="errorPicturesDirCreated">Unable to create directory for pictures!</string>
+    <string name="errorThumbnailsDirCreated">Unable to create directory for thumbnails!</string>
 
     //Строки меню главного экрана
     <string name="addnewscript_sign">Add new script</string>

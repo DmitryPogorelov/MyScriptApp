@@ -26,9 +26,6 @@ public class PictureDisplay extends AppCompatActivity {
 
     private int pictIdToShow = -1;
 
-    //Идентификатор Activity
-    public static final String NAME_INTENT_PICTUREDISPLAY = "intent_PictureDisplay";
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,8 +64,8 @@ public class PictureDisplay extends AppCompatActivity {
         Intent fromIntent = getIntent();
         varSet = fromIntent.getExtras();
 
-        if (varSet != null && varSet.containsKey(ScriptEdit.PICTIRE_ID)) {
-            pictIdToShow = varSet.getInt(ScriptEdit.PICTIRE_ID);  //Загружаем rowId, если он передан
+        if (varSet != null && varSet.containsKey(ScriptEdit.PICTURE_ID)) {
+            pictIdToShow = varSet.getInt(ScriptEdit.PICTURE_ID);  //Загружаем rowId, если он передан
         }
 
     }
@@ -94,17 +91,18 @@ public class PictureDisplay extends AppCompatActivity {
 
         if (imageRecord.getRowId() > 0) {
 
-            pictPath = imageRecord.getPicturePath() + "/" + imageRecord.getPictureName();
+            pictPath = CameraView.createImageGallery(getApplicationContext()) + "/" + imageRecord.getPictureName();
 
             imgFile = new File(pictPath);
 
             if (imgFile.exists()) {
 
                 pictToReturn = BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
+
+                return pictToReturn;
+
             }
-
         }
-
         return pictToReturn;
     }
 
@@ -159,8 +157,8 @@ public class PictureDisplay extends AppCompatActivity {
         toScrEditActivityIntent.setClass(app_context, ScriptEdit.class);
 
         //Удаляем из набора ID картинки
-        if (varSet != null && varSet.containsKey(ScriptEdit.PICTIRE_ID))
-            varSet.remove(ScriptEdit.PICTIRE_ID);
+        if (varSet != null && varSet.containsKey(ScriptEdit.PICTURE_ID))
+            varSet.remove(ScriptEdit.PICTURE_ID);
 
         if (varSet != null)
             toScrEditActivityIntent.putExtras(varSet);

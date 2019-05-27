@@ -13,15 +13,18 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 
+import static com.pdnsoftware.writtendone.MyScriptDB.TABLE_PICTURES;
 import static com.pdnsoftware.writtendone.MyScriptDB.TABLE_SCRIPTS;
 
 class MyScriptDBManager {
 
     private SQLiteDatabase db;
-    private MyScriptDB dbHelper;
+    private final MyScriptDB dbHelper;
+    private final Context con;
 
     MyScriptDBManager(Context c) {
         dbHelper = new MyScriptDB(c);
+        this.con = c;
     }
 
     //Открытие БД на запись
@@ -154,7 +157,7 @@ class MyScriptDBManager {
     int insertPictureRecord (int scriptId, String filePath, String fileName) {
         openDBWrite();
 
-        ContentValues insert_row = new ContentValues(4);
+        ContentValues insert_row = new ContentValues(5);
 
         insert_row.put(MyScriptDB.PICTURES_SCRIPT_ID, scriptId);
         insert_row.put(MyScriptDB.PICTURES_PICTURE_PATH, filePath);
@@ -165,6 +168,8 @@ class MyScriptDBManager {
         Calendar calendar = Calendar.getInstance();
         String curr_date = df.format(calendar.getTime());
         insert_row.put(MyScriptDB.PICTURES_CREATED_DATE, curr_date);
+        insert_row.put(MyScriptDB.PICTURES_THUMBNAIL, "");
+
         int result = (int)db.insertOrThrow(MyScriptDB.TABLE_PICTURES, null, insert_row);
 
         closeDB();
@@ -192,11 +197,13 @@ class MyScriptDBManager {
                 int picturePathColumnIndex = cursor.getColumnIndex(MyScriptDB.PICTURES_PICTURE_PATH);
                 int pictureFilenameColumnIndex = cursor.getColumnIndex(MyScriptDB.PICTURES_PICTURE_FILENAME);
                 int pictureCreatedDateColumnIndex = cursor.getColumnIndex(MyScriptDB.PICTURES_CREATED_DATE);
+                int thumbnailColumnIndex = cursor.getColumnIndex(MyScriptDB.PICTURES_THUMBNAIL);
 
                 while (cursor.moveToNext()) {
                     // Используем индекс для получения строки или числа
                     ret_array.add(new PictureRecord(cursor.getInt(idColumnIndex), cursor.getInt(scriptIdColumnIndex),
-                            cursor.getString(picturePathColumnIndex), cursor.getString(pictureFilenameColumnIndex), cursor.getString(pictureCreatedDateColumnIndex)));
+                            cursor.getString(picturePathColumnIndex), cursor.getString(pictureFilenameColumnIndex),
+                            cursor.getString(pictureCreatedDateColumnIndex), cursor.getString(thumbnailColumnIndex)));
                 }
             }
             if (cursor != null) cursor.close();
@@ -222,6 +229,7 @@ class MyScriptDBManager {
             int picturePathColumnIndex = cursor.getColumnIndex(MyScriptDB.PICTURES_PICTURE_PATH);
             int pictureFilenameColumnIndex = cursor.getColumnIndex(MyScriptDB.PICTURES_PICTURE_FILENAME);
             int pictureCreatedDateColumnIndex = cursor.getColumnIndex(MyScriptDB.PICTURES_CREATED_DATE);
+            int thumbnailColumnIndex = cursor.getColumnIndex(MyScriptDB.PICTURES_THUMBNAIL);
 
             cursor.moveToFirst();
 
@@ -231,6 +239,7 @@ class MyScriptDBManager {
             ret_record.setPicturePath(cursor.getString(picturePathColumnIndex));
             ret_record.setPictureName(cursor.getString(pictureFilenameColumnIndex));
             ret_record.setCreatedDate(cursor.getString(pictureCreatedDateColumnIndex));
+            ret_record.setThumbnail(cursor.getString(thumbnailColumnIndex));
         }
         if (cursor != null) cursor.close();
         closeDB();
@@ -242,16 +251,26 @@ class MyScriptDBManager {
     int deletePictureRecordByPictId (int pictureId) {
 
         boolean fileDelResult = false;
+        boolean thumbnailDelResult = false;
         int dbRecDeleteResult = -1;
+        File pictDir = CameraView.createImageGallery(con);
+        File thumbnailDir = CameraView.createThumbnailsGallery(con);
 
         PictureRecord picToDelete = this.getOnePicture(pictureId);
 
         if (picToDelete.getRowId() > 0) {
             //Удаляем файл с картинкой
-            fileDelResult = this.fileDelete(picToDelete.getPicturePath() + "/" + picToDelete.getPictureName());
+            if (pictDir != null)
+                fileDelResult = this.fileDelete(pictDir.getAbsolutePath()
+                        + "/" + picToDelete.getPictureName());
+
+            //Удаляем файл с тумбнейлом
+            if (thumbnailDir != null)
+            thumbnailDelResult = this.fileDelete(thumbnailDir.getAbsolutePath()
+                    + "/" + picToDelete.getThumbnail());
         }
 
-        if (fileDelResult) {
+        if (fileDelResult && thumbnailDelResult) {
             //Вносим изменения в базу
             openDBWrite();
             String where = String.format(Locale.getDefault(), "%s=%d", MyScriptDB.ROW_ID, pictureId);
@@ -368,8 +387,6 @@ class MyScriptDBManager {
 
         Cursor cursor = db.rawQuery("SELECT count(*) AS TASK_COUNT FROM " + TABLE_SCRIPTS, null);
 
-
-
         if (cursor != null && cursor.getCount() == 1) {
             int idTaskCountIndex = cursor.getColumnIndex("TASK_COUNT");
             cursor.moveToFirst();
@@ -380,6 +397,23 @@ class MyScriptDBManager {
         if (cursor != null) cursor.close();
         closeDB();
         return taskCount;
+    }
+
+    //Функция добавляет имя thumbnail к записи о картинке
+    int addThumbnailName (int pictRowId, File thumbnail) {
+        int updated;
+
+        ContentValues update_row = new ContentValues(1); //Создаем строку со значениями для обновления
+
+        update_row.put(MyScriptDB.PICTURES_THUMBNAIL, thumbnail.getName());
+
+        String where = String.format(Locale.getDefault(), "%s=%d", MyScriptDB.ROW_ID, pictRowId); //Указываем id строки для обновления
+
+        openDBWrite();
+        updated = db.update(TABLE_PICTURES, update_row, where, null);
+        closeDB();
+
+        return updated;
     }
 
 }

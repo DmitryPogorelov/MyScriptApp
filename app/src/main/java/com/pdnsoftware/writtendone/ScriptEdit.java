@@ -6,7 +6,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
-import android.media.ExifInterface;
 import android.media.ThumbnailUtils;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
@@ -29,10 +28,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 public class ScriptEdit extends AppCompatActivity {
 
@@ -42,7 +38,6 @@ public class ScriptEdit extends AppCompatActivity {
 
     private int rowToUpdate = -1; //Идентификатор строки, которую будем обновлять
 
-    private Intent currIntent = new Intent(); //Объект Intent для считывания данных из вызывающей формы
     private Bundle varSet; //объект для параметров вызывающей формы
 
     //Константы для обозначения полей при передаче между формами
@@ -50,7 +45,7 @@ public class ScriptEdit extends AppCompatActivity {
     public static final String CONTENT_FIELD_CONTENT = "content_field_content";
 
     //Константа для передачи идентификатора фоторгафии, которую нужно открывать, в форму PictureDisplay
-    public static final String PICTIRE_ID = "pict_id";
+    public static final String PICTURE_ID = "pict_id";
 
     //Массив для хранения id записей о картинках из БД, которые были загружены.
     private int[] addedPictIds;
@@ -58,15 +53,8 @@ public class ScriptEdit extends AppCompatActivity {
     //Константа с результатом возврата картинки из галлереи
     private static final int RESULT_LOAD_IMAGE = 1;
 
-    //Переменная для установки отступов между картинками
-    private final int paddingDp = 4;
-    private final int paddingPixel = 0;
-
     //Actionbar
-    ActionBar currActionBar;
-
-    //Кнопка "Сохранить и добавить"
-    Button saveAndAddButton;
+    private ActionBar currActionBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,7 +75,8 @@ public class ScriptEdit extends AppCompatActivity {
         etScriptContent.addTextChangedListener(castFirstLetter);
 
         Button saveButton = findViewById(R.id.saveButton);
-        saveAndAddButton = findViewById(R.id.saveAndAddButton);
+        //Кнопка "Сохранить и добавить"
+        Button saveAndAddButton = findViewById(R.id.saveAndAddButton);
 
         saveButton.setOnClickListener(seSaver);
         saveAndAddButton.setOnClickListener(seSaver);
@@ -304,7 +293,7 @@ public class ScriptEdit extends AppCompatActivity {
 
     //*********************Окончание меню***************************************
 
-    public void picturesLoad (int rowId) {
+    private void picturesLoad (int rowId) {
 
         pictures_viewer fragment;
 
@@ -329,7 +318,7 @@ public class ScriptEdit extends AppCompatActivity {
             freshBitmap3 = null;
 
             int orientation;
-            ExifInterface exifObject;
+            android.support.media.ExifInterface exifObject;
 
             //Инициализируем массив для хранения идентификаторов фотографий
             addedPictIds = new int[3];
@@ -353,6 +342,8 @@ public class ScriptEdit extends AppCompatActivity {
 
             pictHeight = pictHeightInDp * (int)app_context.getResources().getDisplayMetrics().density;
 
+            //Переменная для установки отступов между картинками
+            int paddingDp = 4;
             if (recPictures.size() == 1) {
 
                 pictWidth = app_context.getResources().getDisplayMetrics().widthPixels;
@@ -373,7 +364,7 @@ public class ScriptEdit extends AppCompatActivity {
 
             for (int i = 0; i < recPictures.size(); i++) {
 
-                pictPath = recPictures.get(i).getPicturePath() + "/" + recPictures.get(i).getPictureName();
+                pictPath = CameraView.createImageGallery(getApplicationContext()) + "/" + recPictures.get(i).getPictureName();
 
                 imgFile = new File(pictPath);
 
@@ -382,9 +373,9 @@ public class ScriptEdit extends AppCompatActivity {
                     if (j == 0) {
                         myBitmap1 = BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
                         try {
-                            exifObject = new ExifInterface(imgFile.getAbsolutePath());
+                            exifObject = new android.support.media.ExifInterface(imgFile.getAbsolutePath());
 
-                            orientation = exifObject.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+                            orientation = exifObject.getAttributeInt(android.support.media.ExifInterface.TAG_ORIENTATION, android.support.media.ExifInterface.ORIENTATION_UNDEFINED);
                             freshBitmap1 = rotateBitmap(myBitmap1, orientation);
 
                         }
@@ -413,8 +404,8 @@ public class ScriptEdit extends AppCompatActivity {
                         myBitmap2 = BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
 
                         try {
-                            exifObject = new ExifInterface(imgFile.getAbsolutePath());
-                            orientation = exifObject.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+                            exifObject = new android.support.media.ExifInterface(imgFile.getAbsolutePath());
+                            orientation = exifObject.getAttributeInt(android.support.media.ExifInterface.TAG_ORIENTATION, android.support.media.ExifInterface.ORIENTATION_UNDEFINED);
                             freshBitmap2 = rotateBitmap(myBitmap2, orientation);
                         }
                         catch (IOException e) {
@@ -438,8 +429,8 @@ public class ScriptEdit extends AppCompatActivity {
                         myBitmap3 = BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
 
                         try {
-                            exifObject = new ExifInterface(imgFile.getAbsolutePath());
-                            orientation = exifObject.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
+                            exifObject = new android.support.media.ExifInterface(imgFile.getAbsolutePath());
+                            orientation = exifObject.getAttributeInt(android.support.media.ExifInterface.TAG_ORIENTATION, android.support.media.ExifInterface.ORIENTATION_UNDEFINED);
                             freshBitmap3 = rotateBitmap(myBitmap3, orientation);
 
                         }
@@ -470,6 +461,7 @@ public class ScriptEdit extends AppCompatActivity {
                 fragment.pict2.setVisibility(View.GONE);
                 fragment.pict3.setVisibility(View.GONE);
                 //Делаем границу между картинками
+                int paddingPixel = 0;
                 fragment.pict1.setPadding(0, 0, 0, paddingPixel);
             }
             if (j == 2) {
@@ -510,7 +502,8 @@ public class ScriptEdit extends AppCompatActivity {
 
         app_context = getApplicationContext();
 
-        currIntent = getIntent();
+        //Объект Intent для считывания данных из вызывающей формы
+        Intent currIntent = getIntent();
         varSet = currIntent.getExtras();
 
         if (varSet != null && varSet.containsKey(MyScriptDB.ROW_ID))
@@ -549,7 +542,7 @@ public class ScriptEdit extends AppCompatActivity {
         }
     }
 
-    public final View.OnClickListener openFullPicture = new View.OnClickListener() {
+    private final View.OnClickListener openFullPicture = new View.OnClickListener() {
         @Override
         public void onClick(@NotNull View v) {
 
@@ -561,13 +554,13 @@ public class ScriptEdit extends AppCompatActivity {
 
             switch (v.getId()) {
                 case R.id.pict1:
-                    PictureDisplayIntent.putExtra(ScriptEdit.PICTIRE_ID, addedPictIds[0]);
+                    PictureDisplayIntent.putExtra(ScriptEdit.PICTURE_ID, addedPictIds[0]);
                     break;
                 case R.id.pict2:
-                    PictureDisplayIntent.putExtra(ScriptEdit.PICTIRE_ID, addedPictIds[1]);
+                    PictureDisplayIntent.putExtra(ScriptEdit.PICTURE_ID, addedPictIds[1]);
                     break;
                 case R.id.pict3:
-                    PictureDisplayIntent.putExtra(ScriptEdit.PICTIRE_ID, addedPictIds[2]);
+                    PictureDisplayIntent.putExtra(ScriptEdit.PICTURE_ID, addedPictIds[2]);
                     break;
             }
 
@@ -583,13 +576,19 @@ public class ScriptEdit extends AppCompatActivity {
 
             try {
 
+                File photoFileFolder;
                 File photoFile = null;
+
                 try {
-                    photoFile = createImageFile();
+                    photoFileFolder = CameraView.createImageGallery(getApplicationContext());
+                    if (photoFileFolder == null)
+                        throw new IOException("Pictures directory was not found!");
+                    photoFile = CameraView.createImageFile(photoFileFolder);
 
-                } catch (IOException ex) {
-
-                    ex.printStackTrace();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Toast.makeText(getApplicationContext(), getApplicationContext().getResources().getString(R.string.errorPicturesDirCreated),
+                            Toast.LENGTH_SHORT).show();
                 }
 
                 if (photoFile != null && data.getData() != null) {
@@ -609,23 +608,11 @@ public class ScriptEdit extends AppCompatActivity {
 
                     //Добавляем запись о файле в БД
                     //Создаем новую задачу в БД, если ее не было
-                    if (rowToUpdate > 0) {
-                        //Добавляем картинку к задаче
-                        int pictureRecId = myDB.insertPictureRecord(rowToUpdate, photoFile.getParentFile().getAbsolutePath(), photoFile.getName());
-
-                        if (pictureRecId == -1)
-                            Toast.makeText(this, getResources().getString(R.string.photoNotAddedToDBError), Toast.LENGTH_LONG).show();
-                    }
-                    else if (rowToUpdate == -1) {
-                        ScriptRecord newRec = new ScriptRecord(MyScriptDB.EMPTY_ROW_ID, "", "");
+                    if (rowToUpdate == -1) {
+                        ScriptRecord newRec = new ScriptRecord(MyScriptDB.EMPTY_ROW_ID,
+                                etScriptTitle.getText().toString(), etScriptContent.getText().toString());
                         rowToUpdate = myDB.insertScript(newRec);
 
-                        int pictureRecId = myDB.insertPictureRecord(rowToUpdate, photoFile.getParentFile().getAbsolutePath(), photoFile.getName());
-
-                        if (pictureRecId == -1)
-                            Toast.makeText(this, getResources().getString(R.string.photoNotAddedToDBError), Toast.LENGTH_LONG).show();
-
-                        //Добавляем значение в набор varSet для корректной работы кнопки сохранения
                         if (varSet == null) {
                             varSet = new Bundle();
                             varSet.putInt(MyScriptDB.ROW_ID, rowToUpdate);
@@ -634,13 +621,27 @@ public class ScriptEdit extends AppCompatActivity {
                             varSet.putInt(MyScriptDB.ROW_ID, rowToUpdate);
                         }
                     }
-                    //обновляем ActionBar и кнопку
-                    if (rowToUpdate > 0) {
 
+                    if (rowToUpdate > 0) {
+                        //Добавляем картинку к задаче
+                        int pictureRecId = myDB.insertPictureRecord(rowToUpdate, photoFile.getParentFile().getAbsolutePath(), photoFile.getName());
+
+                        if (pictureRecId == -1)
+                            Toast.makeText(this, getResources().getString(R.string.photoNotAddedToDBError), Toast.LENGTH_LONG).show();
+                        else {
+                            //Делаем thumbnail
+                            File thumbnail = CameraView.saveThumbnail(photoFile, getApplicationContext());
+
+                            if (thumbnail != null)
+                                myDB.addThumbnailName(pictureRecId, thumbnail);
+                            else
+                                Toast.makeText(getApplicationContext(), getApplicationContext().getResources().getString(R.string.errorThumbnailsDirCreated),
+                                        Toast.LENGTH_SHORT).show();
+                        }
+                        //обновляем ActionBar и кнопку
                         if (currActionBar != null)
                             currActionBar.setTitle(R.string.headerEditTask);
                     }
-
                 }
                 else
                     Toast.makeText(this, getResources().getString(R.string.fileNotCopied), Toast.LENGTH_LONG).show();
@@ -656,28 +657,7 @@ public class ScriptEdit extends AppCompatActivity {
         picturesLoad(rowToUpdate);
     }
 
-    private File createImageFile() throws IOException {
-        // Create an image file name
-        File storageDirectory = getApplicationContext().getDir("PICTURES", Context.MODE_PRIVATE);
-        File galleryFolder = new File(storageDirectory, getResources().getString(R.string.app_name));
-
-        if (!galleryFolder.exists()) {
-            if (!galleryFolder.mkdirs()) {
-                galleryFolder = storageDirectory;
-            }
-        }
-
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String imageFileName = "image_file_" + timeStamp;
-
-        return File.createTempFile(
-                imageFileName,  /* prefix */
-                ".jpg",         /* suffix */
-                galleryFolder      /* directory */
-        );
-    }
-
-    public static void copyStream(@NotNull InputStream input, OutputStream output) throws IOException {
+    private static void copyStream(@NotNull InputStream input, OutputStream output) throws IOException {
         byte[] buffer = new byte[1024];
         int bytesRead;
         while ((bytesRead = input.read(buffer)) != -1) {
@@ -731,30 +711,30 @@ public class ScriptEdit extends AppCompatActivity {
     public static Bitmap rotateBitmap(Bitmap bitmap, int orientation) {
         Matrix matrix = new Matrix();
         switch (orientation) {
-            case ExifInterface.ORIENTATION_NORMAL:
+            case android.support.media.ExifInterface.ORIENTATION_NORMAL:
                 return bitmap;
-            case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
+            case android.support.media.ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
                 matrix.setScale(-1, 1);
                 break;
-            case ExifInterface.ORIENTATION_ROTATE_180:
+            case android.support.media.ExifInterface.ORIENTATION_ROTATE_180:
                 matrix.setRotate(180);
                 break;
-            case ExifInterface.ORIENTATION_FLIP_VERTICAL:
+            case android.support.media.ExifInterface.ORIENTATION_FLIP_VERTICAL:
                 matrix.setRotate(180);
                 matrix.postScale(-1, 1);
                 break;
-            case ExifInterface.ORIENTATION_TRANSPOSE:
+            case android.support.media.ExifInterface.ORIENTATION_TRANSPOSE:
                 matrix.setRotate(90);
                 matrix.postScale(-1, 1);
                 break;
-            case ExifInterface.ORIENTATION_ROTATE_90:
+            case android.support.media.ExifInterface.ORIENTATION_ROTATE_90:
                 matrix.setRotate(90);
                 break;
-            case ExifInterface.ORIENTATION_TRANSVERSE:
+            case android.support.media.ExifInterface.ORIENTATION_TRANSVERSE:
                 matrix.setRotate(-90);
                 matrix.postScale(-1, 1);
                 break;
-            case ExifInterface.ORIENTATION_ROTATE_270:
+            case android.support.media.ExifInterface.ORIENTATION_ROTATE_270:
                 matrix.setRotate(-90);
                 break;
             default:

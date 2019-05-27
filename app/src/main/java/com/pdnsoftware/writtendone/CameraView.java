@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -12,6 +13,7 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.ThumbnailUtils;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
@@ -25,7 +27,6 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -47,15 +48,10 @@ public class CameraView extends AppCompatActivity {
 
     private HandlerThread backgroundThread;
     private Handler backgroundHandler;
-
     private TextureView currTextureView;
 
-    //Название папки для сохранения файлов
-    private File galleryFolder;
-    private String fullFileName;
-
     //Константа-название данного Активити
-    public static final String NAME_INTENT_CAMERAVIEW = "intent_CameraView";
+    private static final String NAME_INTENT_CAMERAVIEW = "intent_CameraView";
 
     //Переменная для хранения row_id, который пришел из формы редактирования
     private int rowToUpdate = -1;
@@ -77,7 +73,7 @@ public class CameraView extends AppCompatActivity {
         ImageButton btnCamShoot = findViewById(R.id.btnCamShoot);
         ImageButton btnReturn = findViewById(R.id.btnReturn);
 
-        //Привязываем ClickListenerы
+        //Привязываем ClickListeners
         btnReturn.setOnClickListener(returnButtonClkListener);
         btnCamShoot.setOnClickListener(shootButtonClkListener);
 
@@ -98,9 +94,6 @@ public class CameraView extends AppCompatActivity {
         else
             fieldContent = "";
 
-        //Создаем папку для фотографий
-        createImageGallery();
-
         camManager = (CameraManager)getApplicationContext().getSystemService(Context.CAMERA_SERVICE);
         cameraFacing = CameraCharacteristics.LENS_FACING_BACK;
 
@@ -108,7 +101,7 @@ public class CameraView extends AppCompatActivity {
 
     }
 
-    private TextureView.SurfaceTextureListener surfaceTextureListener = new TextureView.SurfaceTextureListener() {
+    private final TextureView.SurfaceTextureListener surfaceTextureListener = new TextureView.SurfaceTextureListener() {
 
         @Override
         public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int width, int height) {
@@ -170,7 +163,7 @@ public class CameraView extends AppCompatActivity {
         backgroundHandler = new Handler(backgroundThread.getLooper());
     }
 
-    private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
+    private final CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
         @Override
         public void onOpened(@NonNull CameraDevice cameraDevice) {
             myCam = cameraDevice;
@@ -227,7 +220,7 @@ public class CameraView extends AppCompatActivity {
         }
     }
     //Обработчик нажатия на кнопку возврата
-    private View.OnClickListener returnButtonClkListener = new View.OnClickListener() {
+    private final View.OnClickListener returnButtonClkListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
 
@@ -236,7 +229,7 @@ public class CameraView extends AppCompatActivity {
     };
 
     //ОБработчик нажатия на кнопку съёмки
-    private View.OnClickListener shootButtonClkListener = new View.OnClickListener() {
+    private final View.OnClickListener shootButtonClkListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
 
@@ -245,7 +238,6 @@ public class CameraView extends AppCompatActivity {
         }
     };
 
-    //
     @Override
     protected void onResume() {
         super.onResume();
@@ -285,35 +277,87 @@ public class CameraView extends AppCompatActivity {
         }
     }
     //Создаем галлерею
-    private void createImageGallery() {
-        File storageDirectory = getApplicationContext().getDir("PICTURES", Context.MODE_PRIVATE);
-        galleryFolder = new File(storageDirectory, getResources().getString(R.string.app_name));
-        if (!galleryFolder.exists()) {
-            boolean wasCreated = galleryFolder.mkdirs();
+    static File createImageGallery(Context con) {
+        try {
+            File storageDirectory = con.getDir(con.getResources().getString(R.string.app_folder), Context.MODE_PRIVATE);
+            if (storageDirectory == null)
+                throw new IOException("Application folder not available!");
+
+            File galleryFolder = new File(storageDirectory, con.getResources().getString(R.string.picture_folder));
+
+            if (!galleryFolder.exists()) {
+                boolean wasCreated = galleryFolder.mkdirs();
+                if (!wasCreated)
+                    return null;
+                else
+                    return galleryFolder;
+            } else
+                return galleryFolder;
+        }
+        catch (IOException e) {
+            return null;
         }
     }
 
-    private File createImageFile(File galleryFolder) {
+    //Создаем галлерею
+    static File createThumbnailsGallery(Context con) {
+        try {
+            File storageDirectory = con.getDir(con.getResources().getString(R.string.app_folder), Context.MODE_PRIVATE);
+            if (storageDirectory == null)
+                throw new IOException("Application folder not available!");
+
+            File thumbnailFolder = new File(storageDirectory, con.getResources().getString(R.string.thumbnail_folder));
+
+            if (!thumbnailFolder.exists()) {
+                boolean wasCreated = thumbnailFolder.mkdirs();
+                if (!wasCreated)
+                    return null;
+                else
+                    return thumbnailFolder;
+            }
+            return thumbnailFolder;
+        }
+        catch (IOException e) {
+            return null;
+        }
+    }
+
+    static File createImageFile(File galleryFolder) {
 
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-        String imageFileName = "image_" + timeStamp;
-        fullFileName = imageFileName + ".jpg";
-        String mPath = galleryFolder.getAbsolutePath() + "/" + fullFileName;
+        String imageFileName = "image_" + timeStamp + ".jpg";
+        String mPath = galleryFolder.getAbsolutePath() + "/" + imageFileName;
+
+        return new File(mPath);
+    }
+
+    private static File createThumbnailFile(File thumbnailFolder) {
+
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+        String imageFileName = "thumbnail_" + timeStamp + ".jpg";
+        String mPath = thumbnailFolder.getAbsolutePath() + "/" + imageFileName;
 
         return new File(mPath);
     }
 
     private void onTakePhotoButtonClicked() {
+
         FileOutputStream outputPhoto = null;
 
         try {
-            outputPhoto = new FileOutputStream(createImageFile(galleryFolder));
+
+            File galleryFolder = createImageGallery(getApplicationContext());
+            if (galleryFolder == null)
+                throw new IOException("Pictures directory was not found!");
+            File imgFile = createImageFile(galleryFolder);
+
+            outputPhoto = new FileOutputStream(imgFile);
 
             boolean res = currTextureView.getBitmap().compress(Bitmap.CompressFormat.JPEG, 100, outputPhoto);
             if (res) {
 
-                String fullFilePath = galleryFolder.getAbsolutePath();
-
+                String imgFilePath = imgFile.getAbsolutePath();
+                String imgFileName = imgFile.getName();
                 //Инициализируем базу для работы с ней
                 //Менеджер БД
                 MyScriptDBManager myDB = new MyScriptDBManager(getApplicationContext());
@@ -326,17 +370,33 @@ public class CameraView extends AppCompatActivity {
 
                 if (rowToUpdate > 0) {
                     //Добавляем картинку к задаче
-                    int pictureRecId = myDB.insertPictureRecord (rowToUpdate, fullFilePath, fullFileName);
+                    int pictureRecId = myDB.insertPictureRecord (rowToUpdate, imgFilePath, imgFileName);
                     if (pictureRecId == -1)
                         Toast.makeText(this, getResources().getString(R.string.photoNotAddedToDBError), Toast.LENGTH_LONG).show();
+                    else {
+                        //Делаем thumbnail
+                        File thumbnail = saveThumbnail(imgFile, getApplicationContext());
+
+                        if (thumbnail != null)
+                            myDB.addThumbnailName(pictureRecId, thumbnail);
+                        else
+                            Toast.makeText(getApplicationContext(), getApplicationContext().getResources().getString(R.string.errorThumbnailsDirCreated),
+                                    Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
         }
+        catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(getApplicationContext(), getApplicationContext().getResources().getString(R.string.errorPicturesDirCreated),
+                    Toast.LENGTH_LONG).show();
+        }
         catch (Exception e) {
             e.printStackTrace();
+            Toast.makeText(getApplicationContext(), getApplicationContext().getResources().getString(R.string.errorPicturesDirCreated),
+                    Toast.LENGTH_LONG).show();
         }
         finally {
-            //unlock();
             try {
                 if (outputPhoto != null) {
                     outputPhoto.flush();
@@ -369,5 +429,114 @@ public class CameraView extends AppCompatActivity {
         intent.putExtra(MainActivity.CALLER_ACTIVITY_NAME, NAME_INTENT_CAMERAVIEW);
         startActivity(intent);
         finish();
+    }
+
+    //Функция делает правильные thumbnail и сохраняет их в папку
+    static File saveThumbnail(File mainPicture, Context con) {
+        File thumbnail = null;
+
+        android.support.media.ExifInterface exifObject;
+        int orientation;
+        Bitmap myBitmap = null;
+        Bitmap freshBitmap = null;
+        FileOutputStream outputPhoto = null;
+
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inSampleSize = 4;
+
+        //Рассчитываем размеры картинок
+        int pictWidth, pictHeight;
+        int pictHeightInDp = 30;
+
+        //Вычисляем размеры тумбнэйла
+        pictHeight = pictWidth = pictHeightInDp * (int)con.getResources().getDisplayMetrics().density;
+
+        if (mainPicture.exists()) {
+
+            myBitmap = BitmapFactory.decodeFile(mainPicture.getAbsolutePath(), options);
+
+            if (myBitmap == null)
+                return null;
+
+            try {
+
+                exifObject = new android.support.media.ExifInterface(mainPicture.getAbsolutePath());
+
+                orientation = exifObject.getAttributeInt(android.support.media.ExifInterface.TAG_ORIENTATION, android.support.media.ExifInterface.ORIENTATION_UNDEFINED);
+                freshBitmap = ScriptEdit.rotateBitmap(myBitmap, orientation);
+
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            if (freshBitmap != null) {
+                freshBitmap = ThumbnailUtils.extractThumbnail(freshBitmap, pictWidth, pictHeight,
+                                        ThumbnailUtils.OPTIONS_RECYCLE_INPUT);
+
+                outputPhoto = null;
+
+                try {
+
+                    File thumbnailGallery = CameraView.createThumbnailsGallery(con);
+                    if (thumbnailGallery == null)
+                        return null;
+
+                    File thumbnailFile =  CameraView.createThumbnailFile(thumbnailGallery);
+
+                    outputPhoto = new FileOutputStream(thumbnailFile);
+
+                    boolean res = freshBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputPhoto);
+
+                    if (res) {
+                        thumbnail = thumbnailFile;
+                    }
+
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            else {
+                myBitmap = ThumbnailUtils.extractThumbnail(myBitmap, pictWidth, pictHeight,
+                                    ThumbnailUtils.OPTIONS_RECYCLE_INPUT);
+
+                outputPhoto = null;
+
+                try {
+
+                    File thumbnailGallery = CameraView.createThumbnailsGallery(con);
+                    if (thumbnailGallery == null)
+                        return null;
+
+                    File thumbnailFile =  CameraView.createThumbnailFile(thumbnailGallery);
+
+                    outputPhoto = new FileOutputStream(thumbnailFile);
+
+                    boolean res = myBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputPhoto);
+
+                    if (res) {
+                        thumbnail = thumbnailFile;
+                    }
+
+                }
+                catch (Exception e) {
+                   e.printStackTrace();
+                }
+            }
+        }
+
+        try {
+            if (outputPhoto != null) {
+                outputPhoto.flush();
+                outputPhoto.close();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (myBitmap != null) myBitmap.recycle();
+        if (freshBitmap != null) freshBitmap.recycle();
+
+        return thumbnail;
     }
 }

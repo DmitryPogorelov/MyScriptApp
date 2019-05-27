@@ -23,7 +23,7 @@
 
         <ImageView
             android:id="@+id/thumbnail1"
-            android:paddingTop="10dp"
+            android:paddingTop="8dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="start|center_vertical"
@@ -44,7 +44,7 @@
             android:visibility="gone"/>
         <ImageView
             android:id="@+id/thumbnail3"
-            android:paddingTop="10dp"
+            android:paddingTop="8dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="start|center_vertical"

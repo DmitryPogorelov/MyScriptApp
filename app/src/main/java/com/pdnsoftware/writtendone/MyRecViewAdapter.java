@@ -5,8 +5,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.ExifInterface;
-import android.media.ThumbnailUtils;
 import android.support.annotation.NonNull;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -20,7 +18,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
@@ -33,13 +30,13 @@ public class MyRecViewAdapter extends RecyclerView.Adapter<MyRecViewAdapter.MyVi
 
     public class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         // each data item is just a string in this case
-        TextView tv_title;
-        TextView tv_content;
-        TextView tvDateTimeCreated;
-        ImageButton delRecordButton;
-        ImageView clipImage, thumbnail1, thumbnail2, thumbnail3;
-        TextView picturesCount;
-        LinearLayout linLayoutForThumbnails;
+        final TextView tv_title;
+        final TextView tv_content;
+        final TextView tvDateTimeCreated;
+        final ImageButton delRecordButton;
+        final ImageView clipImage, thumbnail1, thumbnail2, thumbnail3;
+        final TextView picturesCount;
+        final LinearLayout linLayoutForThumbnails;
 
 
         MyViewHolder(View v) {
@@ -70,14 +67,20 @@ public class MyRecViewAdapter extends RecyclerView.Adapter<MyRecViewAdapter.MyVi
             view.getContext().startActivity(intent);
         }
 
-
-        View.OnClickListener delButtonClick = new View.OnClickListener() {
+        final View.OnClickListener delButtonClick = new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 final View view = v;
+                String question;
+
                 AlertDialog.Builder sureDeleteDialog = new AlertDialog.Builder(v.getContext());
 
-                sureDeleteDialog.setMessage(v.getResources().getString(R.string.deleteTaskQuestion) + " \"" + tv_title.getText().toString() + "\"?");
+                if (tv_title.getText().toString().length() > 0)
+                    question = v.getResources().getString(R.string.deleteTaskQuestion) + " \"" + tv_title.getText().toString() + "\"?";
+                else
+                    question = v.getResources().getString(R.string.deleteNoNameTaskQuestion);
+
+                sureDeleteDialog.setMessage(question);
 
                 sureDeleteDialog.setPositiveButton(R.string.deleteTaskYes, new DialogInterface.OnClickListener() {
                     @Override
@@ -203,54 +206,68 @@ public class MyRecViewAdapter extends RecyclerView.Adapter<MyRecViewAdapter.MyVi
             boolean gotPicture1, gotPicture2, gotPicture3;
             gotPicture1 = gotPicture2 = gotPicture3 = false;
 
-            if (myDB == null)
-                myDB = new MyScriptDBManager(callerAppCompatActivity.getApplicationContext());
+            File thumbnailFolder = CameraView.createThumbnailsGallery(callerAppCompatActivity.getApplicationContext());
 
-            List<PictureRecord> pictArray = myDB.getOneScriptPictures(data.get(position).getRowId());
+            if (thumbnailFolder != null) {
 
-            int i;
+                File imgFile;
 
-            for (i = 0; i < pictArray.size(); i++) {
-                if (i == 0) {
-                    Bitmap tmb1 = getPictThumbnail(pictArray.get(i).getPicturePath() + "/" + pictArray.get(i).getPictureName());
-                    if (tmb1 != null) {
-                        holder.thumbnail1.setImageBitmap(tmb1);
-                        holder.thumbnail1.setVisibility(View.VISIBLE);
-                        gotPicture1 = true;
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                options.inSampleSize = 1;
+
+                if (myDB == null)
+                    myDB = new MyScriptDBManager(callerAppCompatActivity.getApplicationContext());
+
+                List<PictureRecord> pictArray = myDB.getOneScriptPictures(data.get(position).getRowId());
+
+                int i;
+
+                for (i = 0; i < pictArray.size(); i++) {
+
+                    imgFile = new File(thumbnailFolder.getAbsolutePath() + "/" + pictArray.get(i).getThumbnail());
+
+                    if (i == 0) {
+
+                        if (imgFile.exists()) {
+                            Bitmap tmb1 = BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
+                            if (tmb1 != null) {
+                                holder.thumbnail1.setImageBitmap(tmb1);
+                                holder.thumbnail1.setVisibility(View.VISIBLE);
+                                gotPicture1 = true;
+                            }
+                        }
+                    }
+                    if (i == 1) {
+                        Bitmap tmb2 = BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
+                        if (tmb2 != null) {
+                            holder.thumbnail2.setImageBitmap(tmb2);
+                            holder.thumbnail2.setVisibility(View.VISIBLE);
+                            gotPicture2 = true;
+                        }
+                    }
+                    if (i == 2) {
+                        Bitmap tmb3 = BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
+                        if (tmb3 != null) {
+                            holder.thumbnail3.setImageBitmap(tmb3);
+                            holder.thumbnail3.setVisibility(View.VISIBLE);
+                            gotPicture3 = true;
+                        }
                     }
                 }
-                if (i == 1) {
-                    Bitmap tmb2 = getPictThumbnail(pictArray.get(i).getPicturePath() + "/" + pictArray.get(i).getPictureName());
-                    if (tmb2 != null) {
-                        holder.thumbnail2.setImageBitmap(tmb2);
-                        holder.thumbnail2.setVisibility(View.VISIBLE);
-                        gotPicture2 = true;
-                    }
+
+                if (gotPicture1 || gotPicture2 || gotPicture3) {
+                    holder.tv_title.setVisibility(View.GONE);
+                    holder.tv_content.setVisibility(View.GONE);
+                    holder.linLayoutForThumbnails.setVisibility(View.VISIBLE);
                 }
-                if (i == 2) {
-                    Bitmap tmb3 = getPictThumbnail(pictArray.get(i).getPicturePath() + "/" + pictArray.get(i).getPictureName());
-                    if (tmb3 != null) {
-                        holder.thumbnail3.setImageBitmap(tmb3);
-                        holder.thumbnail3.setVisibility(View.VISIBLE);
-                        gotPicture3 = true;
-                    }
-                }
+
+                if (!gotPicture1)
+                    holder.thumbnail1.setVisibility(View.GONE);
+                if (!gotPicture2)
+                    holder.thumbnail2.setVisibility(View.GONE);
+                if (!gotPicture3)
+                    holder.thumbnail3.setVisibility(View.GONE);
             }
-
-            if (gotPicture1 || gotPicture2 || gotPicture3) {
-                holder.tv_title.setVisibility(View.GONE);
-                holder.tv_content.setVisibility(View.GONE);
-                holder.linLayoutForThumbnails.setVisibility(View.VISIBLE);
-            }
-
-            if (!gotPicture1)
-                holder.thumbnail1.setVisibility(View.GONE);
-            if (!gotPicture2)
-                holder.thumbnail2.setVisibility(View.GONE);
-            if (!gotPicture3)
-                holder.thumbnail3.setVisibility(View.GONE);
-
-
         }
     }
 
@@ -258,54 +275,5 @@ public class MyRecViewAdapter extends RecyclerView.Adapter<MyRecViewAdapter.MyVi
     @Override
     public int getItemCount() {
         return data.size();
-    }
-
-    private Bitmap getPictThumbnail(String filePath) {
-        //Рассчитываем размеры картинок
-        int pictWidth, pictHeight;
-        int pictInDp = 30;
-
-        Bitmap myBitmap1, freshBitmap1;
-        File imgFile;
-
-        //Setting bitmap options to avoid missing of memory
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inSampleSize = 8;
-
-        freshBitmap1 = null;
-
-        int orientation;
-        ExifInterface exifObject;
-
-        pictHeight = pictWidth = pictInDp * (int) callerAppCompatActivity.getApplicationContext().getResources().getDisplayMetrics().density;
-
-        imgFile = new File(filePath);
-
-        if (imgFile.exists()) {
-
-            myBitmap1 = BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
-
-            try {
-                exifObject = new ExifInterface(imgFile.getAbsolutePath());
-                orientation = exifObject.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_UNDEFINED);
-                freshBitmap1 = ScriptEdit.rotateBitmap(myBitmap1, orientation);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            if (freshBitmap1 != null) {
-//                if (myBitmap1 != null)
-//                    myBitmap1.recycle();
-
-                return ThumbnailUtils.extractThumbnail(freshBitmap1, pictWidth, pictHeight,
-                        ThumbnailUtils.OPTIONS_RECYCLE_INPUT);
-            } else {
-                if (myBitmap1 != null) {
-                    return ThumbnailUtils.extractThumbnail(myBitmap1, pictWidth, pictHeight,
-                            ThumbnailUtils.OPTIONS_RECYCLE_INPUT);
-                }
-            }
-        }
-        return null;
     }
 }
