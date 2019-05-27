@@ -154,7 +154,7 @@ public class ScriptEdit extends AppCompatActivity {
                         //Проверяем, добавилась ли запись в БД
                         if (insert_res != -1)
                             //Запись добавлена успешно, закрываем окно
-                            finish();
+                            backToMainActivity();
                         else {
                             //Запись не добавлена. Выводим сообщение об ошибке
                             Toast.makeText(ScriptEdit.this, v.getResources().getString(R.string.errorInsert), Toast.LENGTH_LONG).show();
@@ -749,5 +749,20 @@ public class ScriptEdit extends AppCompatActivity {
             e.printStackTrace();
             return null;
         }
+    }
+
+    //Создаем новый Intent и возвращаемся в ScriptEdit Activity
+    private void backToMainActivity() {
+
+        Intent toMainActivityIntent = new Intent();
+        toMainActivityIntent.setClass(app_context, MainActivity.class);
+        startActivity(toMainActivityIntent);
+        finish();
+    }
+
+    //Перехват нажатия кнопки Back
+    @Override
+    public void onBackPressed() {
+        backToMainActivity();
     }
 }
