@@ -170,6 +170,7 @@ public class PictureDisplay extends AppCompatActivity {
     //Перехват нажатия кнопки Back
     @Override
     public void onBackPressed() {
+        super.onBackPressed();
         backToScriptEditActivity();
     }
 }

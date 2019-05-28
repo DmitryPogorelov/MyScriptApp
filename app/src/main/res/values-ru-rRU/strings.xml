@@ -62,4 +62,8 @@
     
     //Intent filters
     <string name="filter_title_writtendone">Written Done - Что записано, то сделано!</string>
+
+    //Permissions
+    <string name="noCameraAccessGranted">Пожалуйста, предоставьте доступ к камере для добавления фотографий к задачам!</string>
+    <string name="noExternalStorageAccessGranted">Пожалуйста, предоставьте доступ к внешнему хранилищу для добавления изображений к задачам!</string>
 </resources>

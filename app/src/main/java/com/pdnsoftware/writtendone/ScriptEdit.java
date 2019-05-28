@@ -1,5 +1,6 @@
 package com.pdnsoftware.writtendone;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -7,8 +8,10 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.media.ThumbnailUtils;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -52,6 +55,10 @@ public class ScriptEdit extends AppCompatActivity {
 
     //Константа с результатом возврата картинки из галлереи
     private static final int RESULT_LOAD_IMAGE = 1;
+    private static final int MY_PERMISSIONS_REQUEST_CAMERA = 2;
+    private static final int MY_PERMISSIONS_REQUEST_EXTERNAL_STORAGE = 3;
+
+    MenuItem addPhotoMenuItem, addPictMenuItem;
 
     //Actionbar
     private ActionBar currActionBar;
@@ -213,15 +220,53 @@ public class ScriptEdit extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.script_edit_menu, menu);
-        return true;
+
+        addPhotoMenuItem = menu.findItem(R.id.add_photo);
+        addPictMenuItem = menu.findItem(R.id.add_picture);
+
+        return super.onCreateOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         boolean allowedToAddPicture = false;
 
+        //Разрешения
+        boolean permissionCameraGranted;
+        boolean permissionStorageAccessGranted;
+
         switch (item.getItemId()) {
             case R.id.add_photo:
+                //Проверяем наличие разрешения на доступ к камере
+                if (ContextCompat.checkSelfPermission(getApplicationContext(),
+                        Manifest.permission.CAMERA)
+                        != PackageManager.PERMISSION_GRANTED) {
+
+                    permissionCameraGranted = false;
+
+                    // Permission is not granted
+                    // Should we show an explanation?
+
+/*                    if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                            Manifest.permission.CAMERA)) {
+                        // Show an explanation to the user *asynchronously* -- don't block
+                        // this thread waiting for the user's response! After the user
+                        // sees the explanation, try again to request the permission.
+                    } else { */
+                        // No explanation needed; request the permission
+                        ActivityCompat.requestPermissions(this,
+                                new String[]{Manifest.permission.CAMERA},
+                                MY_PERMISSIONS_REQUEST_CAMERA);
+
+                        // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                        // app-defined int constant. The callback method gets the
+                        // result of the request.
+ //                   }
+                }
+                else {
+                    permissionCameraGranted = true;
+                }
+
                 //Проверяем количество картинок в записи
                 allowedToAddPicture = false;
                 //Если rowToUpdate < 0 - значит запись новая и всё Ок
@@ -236,7 +281,7 @@ public class ScriptEdit extends AppCompatActivity {
                 //Проверяем наличие в устройстве камеры
                 PackageManager pm = app_context.getPackageManager();
                 final boolean deviceHasCameraFlag = pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY);
-                if (deviceHasCameraFlag && allowedToAddPicture) {
+                if (deviceHasCameraFlag && allowedToAddPicture && permissionCameraGranted) {
                     //Открываем Activity  с камерой
                     Intent cameraIntent = new Intent();
 
@@ -260,6 +305,21 @@ public class ScriptEdit extends AppCompatActivity {
 
                 break;
             case R.id.add_picture:
+                //Проверяем дано ли разрешение на загрузку картинок из внешнего хранилища
+                if (ContextCompat.checkSelfPermission(getApplicationContext(),
+                        Manifest.permission.READ_EXTERNAL_STORAGE)
+                        != PackageManager.PERMISSION_GRANTED) {
+                    // Permission is not granted
+                    permissionStorageAccessGranted = false;
+
+                    ActivityCompat.requestPermissions(this,
+                            new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                            MY_PERMISSIONS_REQUEST_EXTERNAL_STORAGE);
+                }
+                else {
+                    permissionStorageAccessGranted = true;
+                }
+
                 //Проверяем количество картинок в записи
                 //Если rowToUpdate < 0 - значит запись новая и всё Ок
                 if (rowToUpdate <= 0)
@@ -270,7 +330,7 @@ public class ScriptEdit extends AppCompatActivity {
                         allowedToAddPicture = true;
                 }
 
-                if (allowedToAddPicture) {
+                if (allowedToAddPicture && permissionStorageAccessGranted) {
                     //Зарускаем галлерею
                     Intent intGallery = new Intent();
 
@@ -280,15 +340,17 @@ public class ScriptEdit extends AppCompatActivity {
                     startActivityForResult(Intent.createChooser(intGallery, "Select Picture"), RESULT_LOAD_IMAGE);
                 }
                 else {
-                    Toast.makeText(app_context, getResources().getString(R.string.tooMatchPictures), Toast.LENGTH_LONG).show();
+                    if (!allowedToAddPicture)
+                        Toast.makeText(app_context, getResources().getString(R.string.tooMatchPictures), Toast.LENGTH_LONG).show();
                 }
                 break;
 
             case android.R.id.home:
                 backToMainActivity();
+                break;
         }
 
-        return true;
+        return super.onOptionsItemSelected(item);
     }
 
     //*********************Окончание меню***************************************
@@ -763,6 +825,39 @@ public class ScriptEdit extends AppCompatActivity {
     //Перехват нажатия кнопки Back
     @Override
     public void onBackPressed() {
+         super.onBackPressed();
         backToMainActivity();
+    }
+
+    //Проверяем, предоставил ли пользователь разрешения
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NotNull String[] permissions, @NotNull int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_CAMERA: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // permission was granted, yay!
+                    onOptionsItemSelected(addPhotoMenuItem);
+                } else {
+                    Toast.makeText(app_context, getResources().getString(R.string.noCameraAccessGranted),
+                            Toast.LENGTH_LONG).show();
+                }
+                break;
+            }
+            case MY_PERMISSIONS_REQUEST_EXTERNAL_STORAGE: {
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // permission was granted, yay!
+                    onOptionsItemSelected(addPictMenuItem);
+                }
+                else {
+                    Toast.makeText(app_context, getResources().getString(R.string.noExternalStorageAccessGranted),
+                            Toast.LENGTH_LONG).show();
+                }
+                break;
+            }
+        }
     }
 }

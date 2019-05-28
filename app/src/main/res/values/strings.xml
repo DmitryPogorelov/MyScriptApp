@@ -62,4 +62,8 @@
     
     //Intent filters
     <string name="filter_title_writtendone">Written Done - What had been written will be done!</string>
+
+    //Permissions
+    <string name="noCameraAccessGranted">Please allow to use a camera to be able to add photos to task!</string>
+    <string name="noExternalStorageAccessGranted">Please allow to read from external storage to be able to add pictures to task!</string>
 </resources>
