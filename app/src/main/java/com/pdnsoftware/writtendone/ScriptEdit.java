@@ -136,7 +136,7 @@ public class ScriptEdit extends AppCompatActivity {
                     //Обновляем непустую запись
                     if (!isEmptyScriptRecord(script)) {
                         myDB.updateScript(script);
-                        finish();
+                        backToMainActivity();
                     }
                 }
 
@@ -285,7 +285,7 @@ public class ScriptEdit extends AppCompatActivity {
                 break;
 
             case android.R.id.home:
-                finish();
+                backToMainActivity();
         }
 
         return true;
