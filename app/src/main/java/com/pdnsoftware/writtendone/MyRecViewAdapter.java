@@ -6,8 +6,6 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.support.annotation.NonNull;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,8 +23,9 @@ import java.util.Locale;
 public class MyRecViewAdapter extends RecyclerView.Adapter<MyRecViewAdapter.MyViewHolder> {
 
     private List<ScriptRecord> data;
-    private AppCompatActivity callerAppCompatActivity;
     private MyScriptDBManager myDB;
+
+    SetTasksNumber setTasksNumber;
 
     public class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         // each data item is just a string in this case
@@ -91,9 +90,8 @@ public class MyRecViewAdapter extends RecyclerView.Adapter<MyRecViewAdapter.MyVi
                         myDB.deleteScript(currItem.getRowId());
                         data.remove(itemToDeleteIndex);
                         MyRecViewAdapter.this.notifyDataSetChanged();
-
-                        updateActionBar();
-
+                        //Обновляем количество задач в ActionBar
+                        setTasksNumber.actBarUpdater(data.size());
                     }
                 });
 
@@ -114,22 +112,6 @@ public class MyRecViewAdapter extends RecyclerView.Adapter<MyRecViewAdapter.MyVi
     // Provide a suitable constructor (depends on the kind of dataset)
     MyRecViewAdapter(List<ScriptRecord> myDataset) {
         data = myDataset;
-    }
-
-    void setActivity(AppCompatActivity appCompatActivity) {
-        this.callerAppCompatActivity = appCompatActivity;
-    }
-
-    private void updateActionBar() {
-        if (callerAppCompatActivity != null) {
-            MyScriptDBManager myDB = new MyScriptDBManager(callerAppCompatActivity.getApplicationContext());
-            int taskCount = myDB.getTasksCount();
-            ActionBar currBar = callerAppCompatActivity.getSupportActionBar();
-            if (currBar != null)
-                currBar.setTitle(String.format(Locale.getDefault(),
-                        callerAppCompatActivity.getResources().getString(R.string.mainActivitySign)
-                                + " (%s)", taskCount));
-        }
     }
 
     // Create new views (invoked by the layout manager)
@@ -206,7 +188,7 @@ public class MyRecViewAdapter extends RecyclerView.Adapter<MyRecViewAdapter.MyVi
             boolean gotPicture1, gotPicture2, gotPicture3;
             gotPicture1 = gotPicture2 = gotPicture3 = false;
 
-            File thumbnailFolder = CameraView.createThumbnailsGallery(callerAppCompatActivity.getApplicationContext());
+            File thumbnailFolder = CameraView.createThumbnailsGallery(holder.itemView.getContext());
 
             if (thumbnailFolder != null) {
 
@@ -216,7 +198,7 @@ public class MyRecViewAdapter extends RecyclerView.Adapter<MyRecViewAdapter.MyVi
                 options.inSampleSize = 1;
 
                 if (myDB == null)
-                    myDB = new MyScriptDBManager(callerAppCompatActivity.getApplicationContext());
+                    myDB = new MyScriptDBManager(holder.itemView.getContext());
 
                 List<PictureRecord> pictArray = myDB.getOneScriptPictures(data.get(position).getRowId());
 
@@ -276,4 +258,10 @@ public class MyRecViewAdapter extends RecyclerView.Adapter<MyRecViewAdapter.MyVi
     public int getItemCount() {
         return data.size();
     }
+
+    interface SetTasksNumber {
+        void actBarUpdater(int tasksCnt);
+    }
+
+
 }
