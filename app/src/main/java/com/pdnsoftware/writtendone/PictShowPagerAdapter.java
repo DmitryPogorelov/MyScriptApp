@@ -3,21 +3,18 @@ package com.pdnsoftware.writtendone;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.support.v4.view.PagerAdapter;
-import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.TextView;
-
+import android.widget.LinearLayout;
 import org.jetbrains.annotations.NotNull;
-
 import java.io.File;
 import java.util.List;
 
-public class PictShowPagerAdapter extends PagerAdapter {
+class PictShowPagerAdapter extends PagerAdapter {
 
-    private List<File> pictList;
+    private final List<File> pictList;
 
     PictShowPagerAdapter (List<File> pictToShow) {
         pictList = pictToShow;
@@ -33,7 +30,7 @@ public class PictShowPagerAdapter extends PagerAdapter {
     @Override
     public Object instantiateItem(@NotNull ViewGroup container, int position) {
 
-        View page = LayoutInflater.from(container.getContext()).inflate(R.layout.pict_view_pager, null);
+        View page = LayoutInflater.from(container.getContext()).inflate(R.layout.pict_view_pager, (LinearLayout)container.findViewById(R.id.view_pager_root));
 
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inSampleSize = 1;

@@ -22,7 +22,7 @@ import java.util.Locale;
 
 public class MyRecViewAdapter extends RecyclerView.Adapter<MyRecViewAdapter.MyViewHolder> {
 
-    private List<ScriptRecord> data;
+    private final List<ScriptRecord> data;
     private MyScriptDBManager myDB;
 
     SetTasksNumber setTasksNumber;

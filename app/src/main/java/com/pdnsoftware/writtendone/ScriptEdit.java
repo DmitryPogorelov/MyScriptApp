@@ -58,7 +58,7 @@ public class ScriptEdit extends AppCompatActivity {
     private static final int MY_PERMISSIONS_REQUEST_CAMERA = 2;
     private static final int MY_PERMISSIONS_REQUEST_EXTERNAL_STORAGE = 3;
 
-    MenuItem addPhotoMenuItem, addPictMenuItem;
+    private MenuItem addPhotoMenuItem, addPictMenuItem;
 
     //Actionbar
     private ActionBar currActionBar;

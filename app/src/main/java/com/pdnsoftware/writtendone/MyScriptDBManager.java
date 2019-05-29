@@ -4,8 +4,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.support.annotation.NonNull;
-
 import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -14,7 +12,6 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 
-import static com.pdnsoftware.writtendone.MyScriptDB.PICTURES_SCRIPT_ID;
 import static com.pdnsoftware.writtendone.MyScriptDB.TABLE_PICTURES;
 import static com.pdnsoftware.writtendone.MyScriptDB.TABLE_SCRIPTS;
 
