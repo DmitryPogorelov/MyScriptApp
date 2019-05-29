@@ -4,7 +4,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-
 import java.io.File;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -205,7 +204,9 @@ class MyScriptDBManager {
                             cursor.getString(picturePathColumnIndex), cursor.getString(pictureFilenameColumnIndex),
                             cursor.getString(pictureCreatedDateColumnIndex), cursor.getString(thumbnailColumnIndex)));
                 }
+
             }
+
             if (cursor != null) cursor.close();
             closeDB();
         }
@@ -213,7 +214,7 @@ class MyScriptDBManager {
     }
 
     //Функция возвращает одну картинку по id
-    PictureRecord getOnePicture(int pictureId) {
+    private PictureRecord getOnePicture(int pictureId) {
 
         PictureRecord ret_record = new PictureRecord(-1, -1, "", "", "");
 
@@ -416,4 +417,42 @@ class MyScriptDBManager {
         return updated;
     }
 
+    //Создаем файлы для просмотра изображений
+    List<PictureRecord> loadPictFilesToShow(int pictId) {
+
+        List<PictureRecord> retArray;
+        int scriptId = -1;
+
+        if (pictId > 0) {
+            //Определяем идентификатор задачи
+            openDBRead();
+            String[] tableColumns = new String[]{MyScriptDB.PICTURES_SCRIPT_ID};
+
+            String where = String.format(Locale.getDefault(), "%s=%d", MyScriptDB.ROW_ID, pictId); //Указываем id строки для чтения
+
+            Cursor cursor = db.query(TABLE_PICTURES, tableColumns, where, null, null, null, null);
+
+            if (cursor != null && cursor.getCount() == 1) {
+                cursor.moveToFirst();
+                int scriptIdColumnIndex = cursor.getColumnIndex(MyScriptDB.PICTURES_SCRIPT_ID);
+
+                scriptId = cursor.getInt(scriptIdColumnIndex);
+            }
+            if (cursor != null) cursor.close();
+            closeDB();
+        }
+        else
+            return null;
+
+        //Считываем все файлы, которые прикреплены к задаче
+
+        if (scriptId > 0) {
+
+            retArray = getOneScriptPictures(scriptId);
+
+            return retArray;
+        }
+        else
+            return null;
+    }
 }
