@@ -18,7 +18,6 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity implements MyRecViewAdapter.SetTasksNumber {
 
     private MyRecViewAdapter curr_adapter;
-
     private List<ScriptRecord> test_data = new ArrayList<>();
 
     private MyScriptDBManager myDB;

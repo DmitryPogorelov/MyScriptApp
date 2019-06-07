@@ -46,7 +46,6 @@ class MyScriptDB extends SQLiteOpenHelper {
 
     MyScriptDB(Context con) {
         super(con, DB_MYSCRIPT, null, DB_VERSION);
-        Context con_var = con;
     }
 
     @Override

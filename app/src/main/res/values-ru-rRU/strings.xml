@@ -31,12 +31,10 @@
     <string name="deviceHasNoCameraError">В устройстве отсутствует камера!</string>
     <string name="photoNotAddedToDBError">Фото не добавлено в БД</string>
     <string name="fileNotCopied">Не удалось скопировать файл!</string>
-    <string name="tooMatchPictures">К задаче возможно прикрепить не более 3-х картинок!</string>
     <string name="errorPicturesDirCreated">Не удалось создать папку для картинок!</string>
     <string name="errorThumbnailsDirCreated">Не удалось создать папку для иконок!</string>
 
     //Строки меню главного экрана
-    <string name="addnewscript_sign">Добавить</string>
     <string name="quitSign">Выйти</string>
 
     //Строки меню Script Edit

@@ -5,16 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
-import android.media.ThumbnailUtils;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Menu;
@@ -23,14 +21,13 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
-
 import org.jetbrains.annotations.NotNull;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ScriptEdit extends AppCompatActivity {
@@ -50,9 +47,6 @@ public class ScriptEdit extends AppCompatActivity {
     //Константа для передачи идентификатора фоторгафии, которую нужно открывать, в форму PictureDisplay
     public static final String PICTURE_ID = "pict_id";
 
-    //Массив для хранения id записей о картинках из БД, которые были загружены.
-    private int[] addedPictIds;
-
     //Константа с результатом возврата картинки из галлереи
     private static final int RESULT_LOAD_IMAGE = 1;
     private static final int MY_PERMISSIONS_REQUEST_CAMERA = 2;
@@ -62,6 +56,10 @@ public class ScriptEdit extends AppCompatActivity {
 
     //Actionbar
     private ActionBar currActionBar;
+
+    //Переменная для адаптера
+    private PictViewAdapter curr_adapter;
+    private List<PictureRecord> pictsArray = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -123,8 +121,23 @@ public class ScriptEdit extends AppCompatActivity {
                 currActionBar.setTitle(R.string.headerNewTask);
         }
 
-        //Загружаем фотографии
-        picturesLoad(rowToUpdate);
+        //Всё для RecyclerView
+        RecyclerView pictRecyclerView = findViewById(R.id.recViewForPicts);
+
+        // use a grid layout manager
+        RecyclerView.LayoutManager layoutManager = new GridLayoutManager(this, 1,
+                    GridLayoutManager.VERTICAL, false);
+
+        pictRecyclerView.setLayoutManager(layoutManager);
+
+        pictsArray = getPicturesToShow();
+
+        // specify an adapter (see also next example)
+        curr_adapter = new PictViewAdapter(pictsArray, getApplicationContext());
+
+        //Наводим красоту
+        pictRecyclerView.setAdapter(curr_adapter);
+
     }
 
     private final View.OnClickListener seSaver = new View.OnClickListener() {
@@ -200,7 +213,6 @@ public class ScriptEdit extends AppCompatActivity {
 
                 //Очищаем поля
                 rowToUpdate = -1;
-                picturesLoad(rowToUpdate);
                 etScriptTitle.setText("");
                 etScriptContent.setText("");
             break;
@@ -229,7 +241,6 @@ public class ScriptEdit extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        boolean allowedToAddPicture = false;
 
         //Разрешения
         boolean permissionCameraGranted;
@@ -267,21 +278,10 @@ public class ScriptEdit extends AppCompatActivity {
                     permissionCameraGranted = true;
                 }
 
-                //Проверяем количество картинок в записи
-                allowedToAddPicture = false;
-                //Если rowToUpdate < 0 - значит запись новая и всё Ок
-                if (rowToUpdate <= 0)
-                    allowedToAddPicture = true;
-                if (rowToUpdate > 0) {
-                    int pictCount = myDB.picturesCounter(rowToUpdate);
-                    if (pictCount < 3)
-                        allowedToAddPicture = true;
-                }
-
                 //Проверяем наличие в устройстве камеры
                 PackageManager pm = app_context.getPackageManager();
                 final boolean deviceHasCameraFlag = pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY);
-                if (deviceHasCameraFlag && allowedToAddPicture && permissionCameraGranted) {
+                if (deviceHasCameraFlag && permissionCameraGranted) {
                     //Открываем Activity  с камерой
                     Intent cameraIntent = new Intent();
 
@@ -299,8 +299,6 @@ public class ScriptEdit extends AppCompatActivity {
                 else {
                     if (!deviceHasCameraFlag)
                         Toast.makeText(app_context, getResources().getString(R.string.deviceHasNoCameraError), Toast.LENGTH_LONG).show();
-                    if (!allowedToAddPicture)
-                        Toast.makeText(app_context, getResources().getString(R.string.tooMatchPictures), Toast.LENGTH_LONG).show();
                 }
 
                 break;
@@ -320,17 +318,7 @@ public class ScriptEdit extends AppCompatActivity {
                     permissionStorageAccessGranted = true;
                 }
 
-                //Проверяем количество картинок в записи
-                //Если rowToUpdate < 0 - значит запись новая и всё Ок
-                if (rowToUpdate <= 0)
-                    allowedToAddPicture = true;
-                if (rowToUpdate > 0) {
-                    int pictCount = myDB.picturesCounter(rowToUpdate);
-                    if (pictCount < 3)
-                        allowedToAddPicture = true;
-                }
-
-                if (allowedToAddPicture && permissionStorageAccessGranted) {
+                if (permissionStorageAccessGranted) {
                     //Зарускаем галлерею
                     Intent intGallery = new Intent();
 
@@ -339,10 +327,7 @@ public class ScriptEdit extends AppCompatActivity {
 
                     startActivityForResult(Intent.createChooser(intGallery, "Select Picture"), RESULT_LOAD_IMAGE);
                 }
-                else {
-                    if (!allowedToAddPicture)
-                        Toast.makeText(app_context, getResources().getString(R.string.tooMatchPictures), Toast.LENGTH_LONG).show();
-                }
+
                 break;
 
             case android.R.id.home:
@@ -354,210 +339,6 @@ public class ScriptEdit extends AppCompatActivity {
     }
 
     //*********************Окончание меню***************************************
-
-    private void picturesLoad (int rowId) {
-
-        pictures_viewer fragment;
-
-        // First get FragmentManager object.
-        FragmentManager fragmentManager = this.getSupportFragmentManager();
-        FragmentTransaction fragmentTransaction;
-
-        //Загрузить фотографии
-        List<PictureRecord> recPictures = myDB.getOneScriptPictures(rowId);
-
-        if (recPictures.size() > 0) {
-
-            Bitmap myBitmap1, myBitmap2, myBitmap3, freshBitmap1, freshBitmap2, freshBitmap3;
-            File imgFile;
-            String pictPath;
-            //Setting bitmap options to avoid missing of memory
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inSampleSize = 4;
-
-            freshBitmap1 = null;
-            freshBitmap2 = null;
-            freshBitmap3 = null;
-
-            int orientation;
-            android.support.media.ExifInterface exifObject;
-
-            //Инициализируем массив для хранения идентификаторов фотографий
-            addedPictIds = new int[3];
-
-            int j = 0;
-
-            //Get fragment object
-            fragment =  (pictures_viewer)getSupportFragmentManager().findFragmentById(R.id.dynamic_fragment_frame_layout);
-            fragmentTransaction = fragmentManager.beginTransaction();
-
-            if (fragment != null) {
-                fragment.showLayout();
-                fragment.pict1.setVisibility(View.VISIBLE);
-                fragment.pict2.setVisibility(View.VISIBLE);
-                fragment.pict3.setVisibility(View.VISIBLE);
-            }
-
-            //Рассчитываем размеры картинок
-            int pictWidth, pictHeight;
-            int pictHeightInDp = 200;
-
-            pictHeight = pictHeightInDp * (int)app_context.getResources().getDisplayMetrics().density;
-
-            //Переменная для установки отступов между картинками
-            int paddingDp = 4;
-            if (recPictures.size() == 1) {
-
-                pictWidth = app_context.getResources().getDisplayMetrics().widthPixels;
-
-            } else if (recPictures.size() == 2) {
-
-                pictWidth = app_context.getResources().getDisplayMetrics().widthPixels/2 -
-                        (int)app_context.getResources().getDisplayMetrics().density * paddingDp;
-
-            } else if (recPictures.size() == 3) {
-
-                pictWidth = (app_context.getResources().getDisplayMetrics().widthPixels -
-                        4 * (int)app_context.getResources().getDisplayMetrics().density * paddingDp)/3;
-
-            } else {
-                pictWidth = pictHeight = 1;
-            }
-
-            for (int i = 0; i < recPictures.size(); i++) {
-
-                pictPath = CameraView.createImageGallery(getApplicationContext()) + "/" + recPictures.get(i).getPictureName();
-
-                imgFile = new File(pictPath);
-
-                if (imgFile.exists() && j < 3 && fragment != null) {
-
-                    if (j == 0) {
-                        myBitmap1 = BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
-                        try {
-                            exifObject = new android.support.media.ExifInterface(imgFile.getAbsolutePath());
-
-                            orientation = exifObject.getAttributeInt(android.support.media.ExifInterface.TAG_ORIENTATION, android.support.media.ExifInterface.ORIENTATION_UNDEFINED);
-                            freshBitmap1 = rotateBitmap(myBitmap1, orientation);
-
-                        }
-                        catch (IOException e) {
-                            e.printStackTrace();
-                        }
-
-                        if (freshBitmap1 != null) {
-                            fragment.setPicture1(ThumbnailUtils.extractThumbnail(freshBitmap1, pictWidth, pictHeight,
-                                    ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
-                            if (myBitmap1 != null)
-                                myBitmap1.recycle();
-                        }
-                        else {
-                            if (myBitmap1 != null) {
-                                fragment.setPicture1(ThumbnailUtils.extractThumbnail(myBitmap1, pictWidth, pictHeight,
-                                        ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
-                            }
-                        }
-
-                        fragment.pict1.setOnClickListener(openFullPicture);
-
-                        addedPictIds[j] = recPictures.get(i).getRowId();
-                    }
-                    if (j == 1) {
-                        myBitmap2 = BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
-
-                        try {
-                            exifObject = new android.support.media.ExifInterface(imgFile.getAbsolutePath());
-                            orientation = exifObject.getAttributeInt(android.support.media.ExifInterface.TAG_ORIENTATION, android.support.media.ExifInterface.ORIENTATION_UNDEFINED);
-                            freshBitmap2 = rotateBitmap(myBitmap2, orientation);
-                        }
-                        catch (IOException e) {
-                            e.printStackTrace();
-                        }
-
-                        if (freshBitmap2 != null) {
-                            fragment.setPicture2(ThumbnailUtils.extractThumbnail(freshBitmap2, pictWidth, pictHeight,
-                                    ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
-                        }
-                        else {
-                            if (myBitmap2 != null) fragment.setPicture2(ThumbnailUtils.extractThumbnail(myBitmap2, pictWidth, pictHeight,
-                                    ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
-                        }
-
-                        fragment.pict2.setOnClickListener(openFullPicture);
-
-                        addedPictIds[j] = recPictures.get(i).getRowId();
-                    }
-                    if (j == 2) {
-                        myBitmap3 = BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
-
-                        try {
-                            exifObject = new android.support.media.ExifInterface(imgFile.getAbsolutePath());
-                            orientation = exifObject.getAttributeInt(android.support.media.ExifInterface.TAG_ORIENTATION, android.support.media.ExifInterface.ORIENTATION_UNDEFINED);
-                            freshBitmap3 = rotateBitmap(myBitmap3, orientation);
-
-                        }
-                        catch (IOException e) {
-                            e.printStackTrace();
-                        }
-
-                        if (freshBitmap3 != null) {
-                            fragment.setPicture3(ThumbnailUtils.extractThumbnail(freshBitmap3, pictWidth, pictHeight,
-                                    ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
-                        }
-                        else {
-                            if (myBitmap3 != null) fragment.setPicture3(ThumbnailUtils.extractThumbnail(myBitmap3, pictWidth, pictHeight,
-                                    ThumbnailUtils.OPTIONS_RECYCLE_INPUT));
-                        }
-
-                        fragment.pict3.setOnClickListener(openFullPicture);
-
-                        addedPictIds[j] = recPictures.get(i).getRowId();
-                    }
-                    j++;
-                }
-
-            }
-
-            //Скрываем ненужные объекты
-            if (j == 1) {
-                fragment.pict2.setVisibility(View.GONE);
-                fragment.pict3.setVisibility(View.GONE);
-                //Делаем границу между картинками
-                int paddingPixel = 0;
-                fragment.pict1.setPadding(0, 0, 0, paddingPixel);
-            }
-            if (j == 2) {
-                fragment.pict3.setVisibility(View.GONE);
-                //Делаем границу между картинками
-                float density = app_context.getResources().getDisplayMetrics().density;
-                int paddingPixel = (int)(paddingDp * density);
-                fragment.pict1.setPadding(0, 0, paddingPixel, paddingPixel);
-                fragment.pict2.setPadding(paddingPixel, 0, 0, paddingPixel);
-            }
-            if (j == 3) {
-                //Делаем границу между картинками
-                float density = app_context.getResources().getDisplayMetrics().density;
-                int paddingPixel = (int)(paddingDp * density);
-                fragment.pict1.setPadding(0, 0, paddingPixel, paddingPixel);
-                fragment.pict2.setPadding(paddingPixel/2, 0, paddingPixel/2, paddingPixel);
-                fragment.pict3.setPadding(paddingPixel, 0, 0, paddingPixel);
-            }
-
-            if (fragment != null)
-                fragmentTransaction.replace(R.id.dynamic_fragment_frame_layout, fragment);
-            fragmentTransaction.commit();
-
-        }
-        else {
-            //Убираем весь фрагмент с фотками когда фоток в задаче нет
-            fragment =  (pictures_viewer)getSupportFragmentManager().findFragmentById(R.id.dynamic_fragment_frame_layout);
-            fragmentTransaction = fragmentManager.beginTransaction();
-            if (fragment != null)
-                fragment.hideLayout();
-            fragmentTransaction.commit();
-        }
-
-    }
 
     //Выгрузка параметров, переданных в Activity
     private void loadIntentParams() {
@@ -594,41 +375,17 @@ public class ScriptEdit extends AppCompatActivity {
                 rowToUpdate = varSet.getInt(MyScriptDB.ROW_ID);
         }
 
-        //Загружаем фотографии
-        picturesLoad(rowToUpdate);
-
         if (rowToUpdate > 0) {
 
             if (currActionBar != null)
                 currActionBar.setTitle(R.string.headerEditTask);
+
+            //Обновляем картинки в адаптере
+            pictsArray.clear();
+            pictsArray.addAll(getPicturesToShow());
+            curr_adapter.notifyDataSetChanged();
         }
     }
-
-    private final View.OnClickListener openFullPicture = new View.OnClickListener() {
-        @Override
-        public void onClick(@NotNull View v) {
-
-            //Открываем Activity PictureDisplay для просмотра фотографии
-            Intent PictureDisplayIntent = new Intent();
-
-            PictureDisplayIntent.setClass(getApplicationContext(), PictureDisplay.class);
-            //Сохраняем в новый Intent все нужные значения
-
-            switch (v.getId()) {
-                case R.id.pict1:
-                    PictureDisplayIntent.putExtra(ScriptEdit.PICTURE_ID, addedPictIds[0]);
-                    break;
-                case R.id.pict2:
-                    PictureDisplayIntent.putExtra(ScriptEdit.PICTURE_ID, addedPictIds[1]);
-                    break;
-                case R.id.pict3:
-                    PictureDisplayIntent.putExtra(ScriptEdit.PICTURE_ID, addedPictIds[2]);
-                    break;
-            }
-
-            startActivity(PictureDisplayIntent);
-        }
-    };
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -703,6 +460,11 @@ public class ScriptEdit extends AppCompatActivity {
                         //обновляем ActionBar и кнопку
                         if (currActionBar != null)
                             currActionBar.setTitle(R.string.headerEditTask);
+
+                        //Обновляем картинки в адаптере
+                        pictsArray.clear();
+                        pictsArray.addAll(getPicturesToShow());
+                        curr_adapter.notifyDataSetChanged();
                     }
                 }
                 else
@@ -715,8 +477,6 @@ public class ScriptEdit extends AppCompatActivity {
 
         }
 
-        //Загружаем фотографии
-        picturesLoad(rowToUpdate);
     }
 
     private static void copyStream(@NotNull InputStream input, OutputStream output) throws IOException {
@@ -859,5 +619,31 @@ public class ScriptEdit extends AppCompatActivity {
                 break;
             }
         }
+    }
+
+    //Функция готовит массив файлов картинок для отображения
+    private List<PictureRecord> getPicturesToShow() {
+
+        if (rowToUpdate <= 0)
+            return new ArrayList<>();
+
+        //Извлекаем данные из БД
+        List<PictureRecord> testData;
+        List<PictureRecord> verifiedData = new ArrayList<>();
+        File tempFile;
+
+        testData = myDB.getOneScriptPictures(rowToUpdate);
+
+        File pictFolder = CameraView.createImageGallery(getApplicationContext());
+
+        if (pictFolder != null) {
+
+            for (int i = 0; i < testData.size(); i++) {
+                tempFile = new File(pictFolder.getAbsolutePath() + "/" + testData.get(i).getPictureName());
+                if (tempFile.exists())
+                    verifiedData.add(testData.get(i));
+            }
+        }
+        return verifiedData;
     }
 }

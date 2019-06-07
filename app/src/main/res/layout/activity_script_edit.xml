@@ -12,14 +12,10 @@
         android:minHeight="0dp"
         android:orientation="vertical">
 
-        <fragment
-            android:id="@+id/dynamic_fragment_frame_layout"
-            android:name="com.pdnsoftware.writtendone.pictures_viewer"
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/recViewForPicts"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="8dp"
-            tools:layout="@layout/fragment_pictures_viewer" />
+            android:layout_height="wrap_content" />
 
         <EditText
             android:id="@+id/et_script_title"

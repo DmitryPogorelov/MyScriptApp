@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    tools:context=".pictures_viewer">
+    tools:context=".PictViewAdapter">
 
          <ImageButton
             android:id="@+id/pict1"
@@ -16,7 +16,6 @@
             android:layout_weight="1"
             android:background="@null"
             android:visibility="visible"
-             android:maxHeight="200dp"
             android:scaleType="centerCrop"
             android:adjustViewBounds="true"
             android:contentDescription="@string/picture_holder" />
@@ -30,7 +29,6 @@
             android:background="@null"
             android:visibility="visible"
             android:scaleType="centerCrop"
-            android:maxHeight="200dp"
             android:adjustViewBounds="true"
             android:contentDescription="@string/picture_holder" />
 
@@ -43,7 +41,6 @@
             android:scaleType="centerCrop"
             android:adjustViewBounds="true"
             android:background="@null"
-            android:maxHeight="200dp"
             android:visibility="visible"
             android:contentDescription="@string/picture_holder" />
 

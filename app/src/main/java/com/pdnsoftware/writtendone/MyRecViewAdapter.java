@@ -262,6 +262,4 @@ public class MyRecViewAdapter extends RecyclerView.Adapter<MyRecViewAdapter.MyVi
     interface SetTasksNumber {
         void actBarUpdater(int tasksCnt);
     }
-
-
 }

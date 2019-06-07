@@ -125,7 +125,7 @@ class MyScriptDBManager {
         return result;
     }
 
-    int updateScript(ScriptRecord sr) {
+    void updateScript(ScriptRecord sr) {
         openDBWrite(); //Открываем БД на запись
 
         ContentValues update_row = new ContentValues(2); //Создаем строку со значениями для обновления
@@ -135,21 +135,19 @@ class MyScriptDBManager {
 
         String where = String.format(Locale.getDefault(), "%s=%d", MyScriptDB.ROW_ID, sr.getRowId()); //Указываем id строки для обновления
 
-        int result = db.update(TABLE_SCRIPTS, update_row, where, null);
+        db.update(TABLE_SCRIPTS, update_row, where, null);
         closeDB();
-        return result;
     }
 
-    int deleteScript (int rowId) {
+    void deleteScript (int rowId) {
 
         deletePictureRecordByScriptId(rowId);
 
         openDBWrite();
         String where = String.format(Locale.getDefault(), "%s=%d", MyScriptDB.ROW_ID, rowId);
-        int result = db.delete(TABLE_SCRIPTS, where, null);
+        db.delete(TABLE_SCRIPTS, where, null);
         closeDB();
 
-        return result;
     }
 
     //Добавляем запись о месте хранения фотографии
@@ -288,20 +286,15 @@ class MyScriptDBManager {
 
     //Удаляем картинки из БД - ВСЕ картинки, принадлежащие конкретной задаче
     //Функция возвращает количество удаленных строк
-    private int deletePictureRecordByScriptId(int scriptId) {
-        int result = 0;
-        int eachRowResult;
+    private void deletePictureRecordByScriptId(int scriptId) {
 
         List<PictureRecord> listToDel = getOneScriptPictures(scriptId);
 
         if (listToDel.size() > 0) {
             for (int i = 0; i < listToDel.size(); i++) {
-                eachRowResult = deletePictureRecordByPictId(listToDel.get(i).getRowId());
-                if (eachRowResult == 1)
-                    result++;
+                deletePictureRecordByPictId(listToDel.get(i).getRowId());
             }
         }
-        return result;
     }
 
     //Функция удаляет файл. Возвращает true, если файл удален успешно. false, если при удалении
@@ -340,7 +333,7 @@ class MyScriptDBManager {
     }
 
     //Функция считает количество картинок по указанному script_id
-    int picturesCounter(int scriptId) {
+    private int picturesCounter(int scriptId) {
         int pictCount = 0;
 
         openDBRead();
@@ -401,8 +394,7 @@ class MyScriptDBManager {
     }
 
     //Функция добавляет имя thumbnail к записи о картинке
-    int addThumbnailName (int pictRowId, File thumbnail) {
-        int updated;
+    void addThumbnailName (int pictRowId, File thumbnail) {
 
         ContentValues update_row = new ContentValues(1); //Создаем строку со значениями для обновления
 
@@ -411,10 +403,8 @@ class MyScriptDBManager {
         String where = String.format(Locale.getDefault(), "%s=%d", MyScriptDB.ROW_ID, pictRowId); //Указываем id строки для обновления
 
         openDBWrite();
-        updated = db.update(TABLE_PICTURES, update_row, where, null);
+        db.update(TABLE_PICTURES, update_row, where, null);
         closeDB();
-
-        return updated;
     }
 
     //Создаем файлы для просмотра изображений

@@ -31,12 +31,10 @@
     <string name="deviceHasNoCameraError">Device has no camera!</string>
     <string name="photoNotAddedToDBError">Failed to add photo!</string>
     <string name="fileNotCopied">Failed to copy the file!</string>
-    <string name="tooMatchPictures">Task can have up to 3 pictures!</string>
     <string name="errorPicturesDirCreated">Unable to create directory for pictures!</string>
     <string name="errorThumbnailsDirCreated">Unable to create directory for thumbnails!</string>
 
     //Строки меню главного экрана
-    <string name="addnewscript_sign">Add new script</string>
     <string name="quitSign">Quit</string>
 
     //Строки меню Script Edit
