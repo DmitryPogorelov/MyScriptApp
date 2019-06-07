@@ -4,17 +4,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:ignore="AlwaysShowAction">
     <item
-    android:id="@+id/addnewscript"
-    android:icon="@drawable/ic_add_script"
-    android:orderInCategory="0"
-        app:showAsAction="always"
-    android:title="@string/addnewscript_sign" />
-    <item
         android:id="@+id/goToPrivacyPolicy"
         android:orderInCategory="90"
+        app:showAsAction="never"
         android:title="@string/textToPrivacyPolicy" />
     <item
         android:id="@+id/quitApp"
         android:orderInCategory="99"
+        app:showAsAction="never"
         android:title="@string/quitSign" />
 </menu>

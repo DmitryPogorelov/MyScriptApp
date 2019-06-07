@@ -55,6 +55,7 @@
     <string name="sureToDeletePhoto">Delete this image?</string>
     <string name="sureToDeletePhotoYes">Yes!</string>
     <string name="sureToDeletePhotoNo">No!</string>
+    <string name="pictFromPict">\u0020out of\u0020</string>
 
     //Text hints
     <string name="hint_script_title">Header</string>
