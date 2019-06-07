@@ -3,28 +3,34 @@ package com.pdnsoftware.writtendone;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ImageView;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PictureDisplay extends AppCompatActivity {
 
     //Context holder
     private Context app_context;
 
-    //DataBase Manager exeplar
+    //DataBase Manager exemplar
     private MyScriptDBManager myDB;
 
     private Bundle varSet; //объект для параметров вызывающей формы
 
-    private int pictIdToShow = -1;
+    private ActionBar currActionBar; //Ссылка на ActionBar в Activity
+
+    private int pictIdToShow = -1; //Идентификатор картинки, которую надо показывать
+
+    private List<File> picturesToShow;
+    private List<PictureRecord> pictRecs;
+    private ViewPager vp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,7 +45,7 @@ public class PictureDisplay extends AppCompatActivity {
 
         //Заводим ActionBar, чтобы на нем была стрелка назад
         //Variable for actionbar manipulation
-        ActionBar currActionBar = getSupportActionBar();
+        currActionBar = getSupportActionBar();
 
         if (currActionBar != null) {
             currActionBar.setDisplayHomeAsUpEnabled(true);
@@ -48,11 +54,43 @@ public class PictureDisplay extends AppCompatActivity {
         if (currActionBar != null && pictIdToShow > 0) {
             currActionBar.setTitle(myDB.getTaskNameByPictId(pictIdToShow));
         }
-        //Connect interface objects to variables
-        ImageView bigPicture = findViewById(R.id.showPicture);
 
-        //Get image from Database/file system and put it into ImageView
-        bigPicture.setImageBitmap(pictureShow(pictIdToShow));
+        picturesToShow = new ArrayList<>();
+        pictRecs = myDB.loadPictFilesToShow(pictIdToShow);
+
+        int selectedItem = 0;
+
+        if (pictRecs != null && pictRecs.size() > 0) {
+
+            File gallery = CameraView.createImageGallery(getApplicationContext());
+            File tempFile;
+
+            for (int i = 0; i < pictRecs.size(); i++) {
+
+                if (pictRecs.get(i).getRowId() == pictIdToShow)
+                    selectedItem = i;
+
+                tempFile = new File(gallery, pictRecs.get(i).getPictureName());
+
+                if (tempFile.exists())
+                    picturesToShow.add(tempFile);
+            }
+        }
+
+        //get an inflater to be used to create single pages
+//        inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        //Reference ViewPager defined in activity
+        vp = findViewById(R.id.picture_view_pager);
+        //set the adapter that will create the individual pages
+        vp.setAdapter(new PictShowPagerAdapter(picturesToShow));
+
+        vp.addOnPageChangeListener(pictSlide);
+
+        vp.setCurrentItem(selectedItem);
+
+        if (currActionBar != null)
+            currActionBar.setTitle(Integer.toString(selectedItem + 1).concat(getResources().getString(R.string.pictFromPict)).concat(Integer.toString(picturesToShow.size())));
+
     }
 
     //Выгрузка параметров, переданных в Activity
@@ -68,42 +106,6 @@ public class PictureDisplay extends AppCompatActivity {
             pictIdToShow = varSet.getInt(ScriptEdit.PICTURE_ID);  //Загружаем rowId, если он передан
         }
 
-    }
-
-    private Bitmap pictureShow(int pictId) {
-
-        Bitmap pictToReturn;
-        pictToReturn = BitmapFactory.decodeResource(getResources(), R.drawable.camera);
-
-        File imgFile;
-        String pictPath;
-
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inSampleSize = 1;
-
-        PictureRecord imageRecord = new PictureRecord(-1, -1, "", "", "");
-
-        if (pictId > 0) {
-
-            imageRecord = myDB.getOnePicture(pictId);
-
-        }
-
-        if (imageRecord.getRowId() > 0) {
-
-            pictPath = CameraView.createImageGallery(getApplicationContext()) + "/" + imageRecord.getPictureName();
-
-            imgFile = new File(pictPath);
-
-            if (imgFile.exists()) {
-
-                pictToReturn = BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
-
-                return pictToReturn;
-
-            }
-        }
-        return pictToReturn;
     }
 
     @Override
@@ -123,8 +125,17 @@ public class PictureDisplay extends AppCompatActivity {
                 sureToDelDialog.setPositiveButton(getResources().getString(R.string.sureToDeletePhotoYes), new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        if (pictIdToShow > 0)
-                            myDB.deletePictureRecordByPictId(pictIdToShow);
+                        if (pictIdToShow > 0) {
+
+                            File fileToDel = picturesToShow.get(vp.getCurrentItem());
+
+                            for (int i  = 0; i < pictRecs.size(); i++) {
+                                if (fileToDel.getName().equals(pictRecs.get(i).getPictureName())) {
+                                    myDB.deletePictureRecordByPictId(pictRecs.get(i).getRowId());
+                                    break;
+                                }
+                            }
+                        }
                         backToScriptEditActivity();
                     }
                 });
@@ -173,4 +184,23 @@ public class PictureDisplay extends AppCompatActivity {
         super.onBackPressed();
         backToScriptEditActivity();
     }
+
+    //Создаем Listener для смены надписи на ActionBare
+    private final ViewPager.OnPageChangeListener pictSlide = new ViewPager.OnPageChangeListener() {
+        @Override
+        public void onPageScrolled(int i, float v, int i1) {
+
+        }
+
+        @Override
+        public void onPageSelected(int i) {
+            if (currActionBar != null)
+                currActionBar.setTitle(Integer.toString(i + 1).concat(getResources().getString(R.string.pictFromPict)).concat(Integer.toString(picturesToShow.size())));
+        }
+
+        @Override
+        public void onPageScrollStateChanged(int i) {
+
+        }
+    };
 }

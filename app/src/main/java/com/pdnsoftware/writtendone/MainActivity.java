@@ -7,14 +7,15 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.text.Html;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements MyRecViewAdapter.SetTasksNumber {
 
     private MyRecViewAdapter curr_adapter;
 
@@ -59,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
         // specify an adapter (see also next example)
         curr_adapter = new MyRecViewAdapter(test_data);
 
-        curr_adapter.setActivity(this);
+        curr_adapter.setTasksNumber = this;
 
         //Наводим красоту
         recyclerView.setAdapter(curr_adapter);
@@ -69,12 +70,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.addnewscript:
-                Intent intent = new Intent();
-                intent.setClass(getApplicationContext(), ScriptEdit.class);
-                intent.putExtra(MainActivity.CALLER_ACTIVITY_NAME, MainActivity.NAME_INTENT_MAINACTIVITY);
-                startActivity(intent);
-                break;
             case R.id.goToPrivacyPolicy:
                 Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(getResources().getString(R.string.linkToPrivacyPolicy)));
                 startActivity(browserIntent);
@@ -99,5 +94,18 @@ public class MainActivity extends AppCompatActivity {
             int taskCount = myDB.getTasksCount();
             currActionBar.setTitle(String.format(Locale.getDefault(), getResources().getString(R.string.mainActivitySign) + " (%s)", taskCount));
         }
+    }
+
+    public void actBarUpdater(int tasksCnt) {
+        if (currActionBar != null) {
+            currActionBar.setTitle(String.format(Locale.getDefault(), getResources().getString(R.string.mainActivitySign) + " (%s)", tasksCnt));
+        }
+    }
+
+    public void onClickAddNewItem(View v) {
+        Intent intent = new Intent();
+        intent.setClass(getApplicationContext(), ScriptEdit.class);
+        intent.putExtra(MainActivity.CALLER_ACTIVITY_NAME, MainActivity.NAME_INTENT_MAINACTIVITY);
+        startActivity(intent);
     }
 }
