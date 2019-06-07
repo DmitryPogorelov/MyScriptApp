@@ -55,6 +55,7 @@
     <string name="sureToDeletePhoto">Удалить это изображение?</string>
     <string name="sureToDeletePhotoYes">Да!</string>
     <string name="sureToDeletePhotoNo">Нет!</string>
+    <string name="pictFromPict">\u0020из\u0020</string>
 
     //Text hints
     <string name="hint_script_title">Заголовок</string>

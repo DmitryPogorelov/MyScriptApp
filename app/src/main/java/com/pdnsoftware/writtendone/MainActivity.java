@@ -9,6 +9,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -69,12 +70,6 @@ public class MainActivity extends AppCompatActivity implements MyRecViewAdapter.
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.addnewscript:
-                Intent intent = new Intent();
-                intent.setClass(getApplicationContext(), ScriptEdit.class);
-                intent.putExtra(MainActivity.CALLER_ACTIVITY_NAME, MainActivity.NAME_INTENT_MAINACTIVITY);
-                startActivity(intent);
-                break;
             case R.id.goToPrivacyPolicy:
                 Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(getResources().getString(R.string.linkToPrivacyPolicy)));
                 startActivity(browserIntent);
@@ -105,5 +100,12 @@ public class MainActivity extends AppCompatActivity implements MyRecViewAdapter.
         if (currActionBar != null) {
             currActionBar.setTitle(String.format(Locale.getDefault(), getResources().getString(R.string.mainActivitySign) + " (%s)", tasksCnt));
         }
+    }
+
+    public void onClickAddNewItem(View v) {
+        Intent intent = new Intent();
+        intent.setClass(getApplicationContext(), ScriptEdit.class);
+        intent.putExtra(MainActivity.CALLER_ACTIVITY_NAME, MainActivity.NAME_INTENT_MAINACTIVITY);
+        startActivity(intent);
     }
 }

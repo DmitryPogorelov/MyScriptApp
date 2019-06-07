@@ -24,7 +24,9 @@ public class PictureDisplay extends AppCompatActivity {
 
     private Bundle varSet; //объект для параметров вызывающей формы
 
-    private int pictIdToShow = -1;
+    private ActionBar currActionBar; //Ссылка на ActionBar в Activity
+
+    private int pictIdToShow = -1; //Идентификатор картинки, которую надо показывать
 
     private List<File> picturesToShow;
     private List<PictureRecord> pictRecs;
@@ -43,7 +45,7 @@ public class PictureDisplay extends AppCompatActivity {
 
         //Заводим ActionBar, чтобы на нем была стрелка назад
         //Variable for actionbar manipulation
-        ActionBar currActionBar = getSupportActionBar();
+        currActionBar = getSupportActionBar();
 
         if (currActionBar != null) {
             currActionBar.setDisplayHomeAsUpEnabled(true);
@@ -82,7 +84,12 @@ public class PictureDisplay extends AppCompatActivity {
         //set the adapter that will create the individual pages
         vp.setAdapter(new PictShowPagerAdapter(picturesToShow));
 
+        vp.addOnPageChangeListener(pictSlide);
+
         vp.setCurrentItem(selectedItem);
+
+        if (currActionBar != null)
+            currActionBar.setTitle(Integer.toString(selectedItem + 1).concat(getResources().getString(R.string.pictFromPict)).concat(Integer.toString(picturesToShow.size())));
 
     }
 
@@ -100,42 +107,6 @@ public class PictureDisplay extends AppCompatActivity {
         }
 
     }
-
- /*   private Bitmap pictureShow(int pictId) {
-
-        Bitmap pictToReturn;
-        pictToReturn = BitmapFactory.decodeResource(getResources(), R.drawable.camera);
-
-        File imgFile;
-        String pictPath;
-
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inSampleSize = 1;
-
-        PictureRecord imageRecord = new PictureRecord(-1, -1, "", "", "");
-
-        if (pictId > 0) {
-
-            imageRecord = myDB.getOnePicture(pictId);
-
-        }
-
-        if (imageRecord.getRowId() > 0) {
-
-            pictPath = CameraView.createImageGallery(getApplicationContext()) + "/" + imageRecord.getPictureName();
-
-            imgFile = new File(pictPath);
-
-            if (imgFile.exists()) {
-
-                pictToReturn = BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
-
-                return pictToReturn;
-
-            }
-        }
-        return pictToReturn;
-    }*/
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -213,4 +184,23 @@ public class PictureDisplay extends AppCompatActivity {
         super.onBackPressed();
         backToScriptEditActivity();
     }
+
+    //Создаем Listener для смены надписи на ActionBare
+    private final ViewPager.OnPageChangeListener pictSlide = new ViewPager.OnPageChangeListener() {
+        @Override
+        public void onPageScrolled(int i, float v, int i1) {
+
+        }
+
+        @Override
+        public void onPageSelected(int i) {
+            if (currActionBar != null)
+                currActionBar.setTitle(Integer.toString(i + 1).concat(getResources().getString(R.string.pictFromPict)).concat(Integer.toString(picturesToShow.size())));
+        }
+
+        @Override
+        public void onPageScrollStateChanged(int i) {
+
+        }
+    };
 }
