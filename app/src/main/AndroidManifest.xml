@@ -22,8 +22,7 @@
             android:parentActivityName="com.pdnsoftware.writtendone.ScriptEdit" />
         <activity
             android:name="com.pdnsoftware.writtendone.CameraView"
-            android:parentActivityName="com.pdnsoftware.writtendone.ScriptEdit"
-            android:screenOrientation="portrait" />
+            android:parentActivityName="com.pdnsoftware.writtendone.ScriptEdit" />
         <activity
             android:name="com.pdnsoftware.writtendone.ScriptEdit"
             android:parentActivityName="com.pdnsoftware.writtendone.MainActivity"

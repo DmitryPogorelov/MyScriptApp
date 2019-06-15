@@ -10,7 +10,6 @@ import android.support.v7.widget.RecyclerView;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -53,7 +52,6 @@ public class MainActivity extends AppCompatActivity implements MyRecViewAdapter.
         recyclerView.setLayoutManager(layoutManager);
 
         //Извлекаем данные из БД
-
         test_data = myDB.getTasksList();
 
         // specify an adapter (see also next example)

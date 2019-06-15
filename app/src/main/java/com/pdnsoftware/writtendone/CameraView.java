@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -27,6 +29,8 @@ import android.view.TextureView;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -98,7 +102,6 @@ public class CameraView extends AppCompatActivity {
         cameraFacing = CameraCharacteristics.LENS_FACING_BACK;
 
         currTextureView.setSurfaceTextureListener(surfaceTextureListener);
-
     }
 
     private final TextureView.SurfaceTextureListener surfaceTextureListener = new TextureView.SurfaceTextureListener() {
@@ -111,7 +114,7 @@ public class CameraView extends AppCompatActivity {
 
         @Override
         public void onSurfaceTextureSizeChanged(SurfaceTexture surfaceTexture, int width, int height) {
-
+            //configureTransform(width, height);
         }
 
         @Override
@@ -131,18 +134,24 @@ public class CameraView extends AppCompatActivity {
                 CameraCharacteristics cameraCharacteristics =
                         camManager.getCameraCharacteristics(cameraId);
 
-                if (cameraCharacteristics.get(CameraCharacteristics.LENS_FACING) ==
-                        cameraFacing) {
+                if (cameraCharacteristics.get(CameraCharacteristics.LENS_FACING) == cameraFacing) {
                     StreamConfigurationMap streamConfigurationMap = cameraCharacteristics.get(
                             CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
 
-                    if (streamConfigurationMap != null)
+                    if (streamConfigurationMap != null) {
                         previewSize = streamConfigurationMap.getOutputSizes(SurfaceTexture.class)[0];
+                        configureTransform(currTextureView.getWidth(), currTextureView.getHeight());
+                    }
+
                     camIDtoUse = cameraId;
                 }
             }
         } catch (CameraAccessException e) {
             e.printStackTrace();
+        }
+        catch (NullPointerException e) {
+            Toast.makeText(getApplicationContext(), getResources().getString(R.string.errorCameraNotFound), Toast.LENGTH_SHORT).show();
+            backToScriptEditActivity();
         }
     }
 
@@ -188,33 +197,34 @@ public class CameraView extends AppCompatActivity {
             SurfaceTexture surfaceTexture = currTextureView.getSurfaceTexture();
             surfaceTexture.setDefaultBufferSize(previewSize.getWidth(), previewSize.getHeight());
             Surface previewSurface = new Surface(surfaceTexture);
+
             captureRequestBuilder = myCam.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             captureRequestBuilder.addTarget(previewSurface);
 
             myCam.createCaptureSession(Collections.singletonList(previewSurface),
-                    new CameraCaptureSession.StateCallback() {
+                new CameraCaptureSession.StateCallback() {
 
-                        @Override
-                        public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
-                            if (myCam == null) {
-                                return;
-                            }
-
-                            try {
-                                captureRequest = captureRequestBuilder.build();
-                                gCameraCaptureSession = cameraCaptureSession;
-                                gCameraCaptureSession.setRepeatingRequest(captureRequest,
-                                        null, backgroundHandler);
-                            } catch (CameraAccessException e) {
-                                e.printStackTrace();
-                            }
+                    @Override
+                    public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
+                        if (myCam == null) {
+                            return;
                         }
 
-                        @Override
-                        public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
-
+                        try {
+                            captureRequest = captureRequestBuilder.build();
+                            gCameraCaptureSession = cameraCaptureSession;
+                            gCameraCaptureSession.setRepeatingRequest(captureRequest,
+                                    null, backgroundHandler);
+                        } catch (CameraAccessException e) {
+                            e.printStackTrace();
                         }
-                    }, backgroundHandler);
+                    }
+
+                    @Override
+                    public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
+
+                    }
+                }, backgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
         }
@@ -223,7 +233,6 @@ public class CameraView extends AppCompatActivity {
     private final View.OnClickListener returnButtonClkListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-
             backToScriptEditActivity();
         }
     };
@@ -232,7 +241,6 @@ public class CameraView extends AppCompatActivity {
     private final View.OnClickListener shootButtonClkListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-
             onTakePhotoButtonClicked();
             backToScriptEditActivity();
         }
@@ -277,7 +285,7 @@ public class CameraView extends AppCompatActivity {
         }
     }
     //Создаем галлерею
-    static File createImageGallery(Context con) {
+    static File createImageGallery(@NotNull Context con) {
         try {
             File storageDirectory = con.getDir(con.getResources().getString(R.string.app_folder), Context.MODE_PRIVATE);
             if (storageDirectory == null)
@@ -300,7 +308,7 @@ public class CameraView extends AppCompatActivity {
     }
 
     //Создаем галлерею
-    static File createThumbnailsGallery(Context con) {
+    static File createThumbnailsGallery(@NotNull Context con) {
         try {
             File storageDirectory = con.getDir(con.getResources().getString(R.string.app_folder), Context.MODE_PRIVATE);
             if (storageDirectory == null)
@@ -353,7 +361,51 @@ public class CameraView extends AppCompatActivity {
 
             outputPhoto = new FileOutputStream(imgFile);
 
-            boolean res = currTextureView.getBitmap().compress(Bitmap.CompressFormat.JPEG, 100, outputPhoto);
+            //*****************Делаем Bitmap в соответствии с настоящей ориентацией экрана********************************/
+            Bitmap bitmapRAW = currTextureView.getBitmap();
+            Bitmap bmRotated = null;
+
+            int rotation = getWindowManager().getDefaultDisplay().getRotation();
+
+            if (rotation != Surface.ROTATION_0) {
+
+                Matrix matrix = new Matrix();
+
+                RectF viewRect = new RectF(0, 0, bitmapRAW.getWidth(), bitmapRAW.getHeight());
+                RectF bufferRect = new RectF(0, 0, bitmapRAW.getHeight(), bitmapRAW.getWidth());
+
+                float centerX = viewRect.centerX();
+                float centerY = viewRect.centerY();
+
+                if (Surface.ROTATION_90 == rotation || Surface.ROTATION_270 == rotation) {
+
+                    bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY());
+
+                    matrix.setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL);
+
+                    float scale = Math.max(
+                            (float) bitmapRAW.getHeight() / bitmapRAW.getHeight(),
+                            (float) bitmapRAW.getWidth() / bitmapRAW.getWidth());
+
+                    matrix.postScale(scale, scale, centerX, centerY);
+
+                    matrix.postRotate(90 * (rotation - 2), centerX, centerY);
+
+                } else if (Surface.ROTATION_180 == rotation) {
+                    matrix.postRotate(180, centerX, centerY);
+                }
+
+                bmRotated = Bitmap.createBitmap(bitmapRAW, 0, 0, bitmapRAW.getWidth(), bitmapRAW.getHeight(), matrix, true);
+                bitmapRAW.recycle();
+            }
+
+            //************************************************************************************************************/
+            boolean res;
+            if (bmRotated != null && bitmapRAW.isRecycled())
+                res = bmRotated.compress(Bitmap.CompressFormat.JPEG, 80, outputPhoto);
+            else
+                res = bitmapRAW.compress(Bitmap.CompressFormat.JPEG, 80, outputPhoto);
+
             if (res) {
 
                 String imgFilePath = imgFile.getAbsolutePath();
@@ -433,7 +485,8 @@ public class CameraView extends AppCompatActivity {
     }
 
     //Функция делает правильные thumbnail и сохраняет их в папку
-    static File saveThumbnail(File mainPicture, Context con) {
+    @Nullable
+    static File saveThumbnail(@NotNull File mainPicture, @NotNull Context con) {
         File thumbnail = null;
 
         android.support.media.ExifInterface exifObject;
@@ -453,19 +506,10 @@ public class CameraView extends AppCompatActivity {
         pictHeight = pictWidth = pictHeightInDp * (int)con.getResources().getDisplayMetrics().density;
 
         if (mainPicture.exists()) {
-
-            myBitmap = BitmapFactory.decodeFile(mainPicture.getAbsolutePath(), options);
-
-            if (myBitmap == null)
-                return null;
-
             try {
-
                 exifObject = new android.support.media.ExifInterface(mainPicture.getAbsolutePath());
-
                 orientation = exifObject.getAttributeInt(android.support.media.ExifInterface.TAG_ORIENTATION, android.support.media.ExifInterface.ORIENTATION_UNDEFINED);
-                freshBitmap = ScriptEdit.rotateBitmap(myBitmap, orientation);
-
+                freshBitmap = ScriptEdit.rotateBitmap(BitmapFactory.decodeFile(mainPicture.getAbsolutePath(), options), orientation);
             }
             catch (IOException e) {
                 e.printStackTrace();
@@ -499,6 +543,11 @@ public class CameraView extends AppCompatActivity {
                 }
             }
             else {
+                myBitmap = BitmapFactory.decodeFile(mainPicture.getAbsolutePath(), options);
+
+                if (myBitmap == null)
+                    return null;
+
                 myBitmap = ThumbnailUtils.extractThumbnail(myBitmap, pictWidth, pictHeight,
                                     ThumbnailUtils.OPTIONS_RECYCLE_INPUT);
 
@@ -539,5 +588,52 @@ public class CameraView extends AppCompatActivity {
         if (freshBitmap != null) freshBitmap.recycle();
 
         return thumbnail;
+    }
+
+    //Процедура для поворота камеры при повороте экрана
+    private void configureTransform(int viewWidth, int viewHeight) {
+        if (null == currTextureView || null == previewSize) {
+            return;
+        }
+
+        Matrix matrix = configurationMatrix(viewWidth, viewHeight);
+
+        if (matrix != null)
+            currTextureView.setTransform(matrix);
+    }
+
+    //Получаем объект Matrix для вращения картинки
+    private Matrix configurationMatrix(int viewWidth, int viewHeight) {
+        if (null == currTextureView || null == previewSize) {
+            return null;
+        }
+        int rotation = getWindowManager().getDefaultDisplay().getRotation();
+
+        Matrix matrix = new Matrix();
+
+        RectF viewRect = new RectF(0, 0, viewWidth, viewHeight);
+        RectF bufferRect = new RectF(0, 0, previewSize.getHeight(), previewSize.getWidth());
+
+        float centerX = viewRect.centerX();
+        float centerY = viewRect.centerY();
+
+        if (Surface.ROTATION_90 == rotation || Surface.ROTATION_270 == rotation) {
+
+            bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY());
+
+            matrix.setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL);
+
+            float scale = Math.max(
+                    (float) viewHeight / previewSize.getHeight(),
+                    (float) viewWidth / previewSize.getWidth());
+
+            matrix.postScale(scale, scale, centerX, centerY);
+
+            matrix.postRotate(90 * (rotation - 2), centerX, centerY);
+
+        } else if (Surface.ROTATION_180 == rotation) {
+            matrix.postRotate(180, centerX, centerY);
+        }
+        return matrix;
     }
 }

@@ -19,7 +19,6 @@ import java.io.File;
 import java.util.List;
 import java.util.Locale;
 
-
 public class MyRecViewAdapter extends RecyclerView.Adapter<MyRecViewAdapter.MyViewHolder> {
 
     private final List<ScriptRecord> data;
@@ -157,7 +156,6 @@ public class MyRecViewAdapter extends RecyclerView.Adapter<MyRecViewAdapter.MyVi
             holder.thumbnail1.setVisibility(View.GONE);
             holder.thumbnail2.setVisibility(View.GONE);
             holder.thumbnail3.setVisibility(View.GONE);
-
 
         }
         else if (data.get(position).getTitle().length() == 0 && data.get(position).getContent().length() > 0) {

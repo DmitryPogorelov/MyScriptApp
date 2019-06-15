@@ -235,7 +235,6 @@ public class PictViewAdapter extends RecyclerView.Adapter<PictViewAdapter.PictVi
             holder.img2.setPadding(paddingPixel, 0, paddingPixel, 3*paddingPixel);
             holder.img3.setPadding(2*paddingPixel, 0, 0, 3*paddingPixel);
         }
-
     }
 
     @Override

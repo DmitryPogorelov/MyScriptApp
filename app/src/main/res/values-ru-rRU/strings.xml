@@ -33,6 +33,8 @@
     <string name="fileNotCopied">Не удалось скопировать файл!</string>
     <string name="errorPicturesDirCreated">Не удалось создать папку для картинок!</string>
     <string name="errorThumbnailsDirCreated">Не удалось создать папку для иконок!</string>
+    <string name="errorPictureDel">Возникла ошибка при удалении изображения!</string>
+    <string name="errorCameraNotFound">Не удалось открыть камеру!</string>
 
     //Строки меню главного экрана
     <string name="quitSign">Выйти</string>
