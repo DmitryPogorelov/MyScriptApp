@@ -8,7 +8,7 @@
     android:gravity="center"
     tools:context=".PictureDisplay">
 
-    <android.support.v4.view.ViewPager
+    <com.pdnsoftware.writtendone.FreezeViewPager
         android:id="@+id/picture_view_pager"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

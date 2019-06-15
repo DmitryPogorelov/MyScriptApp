@@ -1,7 +1,11 @@
 package com.pdnsoftware.writtendone;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.PointF;
+import android.graphics.drawable.Drawable;
+import android.os.AsyncTask;
 import android.support.v4.view.PagerAdapter;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -11,6 +15,8 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import org.jetbrains.annotations.NotNull;
 import java.io.File;
+import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.List;
 
 class PictShowPagerAdapter extends PagerAdapter {
@@ -38,6 +44,8 @@ class PictShowPagerAdapter extends PagerAdapter {
 
         ImageView iView = page.findViewById(R.id.showPicture);
 
+        new AsynkPhotoLoader(iView).execute(pictList.get(position));
+
         iView.setOnTouchListener(new MyOnTouchListener());
         iView.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
@@ -57,7 +65,65 @@ class PictShowPagerAdapter extends PagerAdapter {
         object=null;
     }
 
-    class MyOnTouchListener implements View.OnTouchListener {
+    //Класс для асинхронной загрузки фотографий
+    private static class AsynkPhotoLoader extends AsyncTask<File, Void, Bitmap> {
+
+        private final WeakReference<ImageView> imageViewReference;
+
+        AsynkPhotoLoader(ImageView imageView) {
+            this.imageViewReference = new WeakReference<>(imageView);
+        }
+
+        protected Bitmap doInBackground(File... pictToLoad) {
+            File fileToLoad = pictToLoad[0];
+
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inSampleSize = 1;
+
+            Bitmap pictToReturn;
+
+            //****************Поворачиваем фото, если надо****************************
+            try {
+                android.support.media.ExifInterface exifObject =
+                        new android.support.media.ExifInterface(fileToLoad.getAbsolutePath());
+
+                int orientation = exifObject.getAttributeInt(android.support.media.ExifInterface.TAG_ORIENTATION,
+                        android.support.media.ExifInterface.ORIENTATION_UNDEFINED);
+
+                pictToReturn = ScriptEdit.rotateBitmap(BitmapFactory.decodeFile(fileToLoad.getAbsolutePath(),
+                        options), orientation);
+
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+                pictToReturn = BitmapFactory.decodeFile(fileToLoad.getAbsolutePath(), options);
+            }
+
+            return pictToReturn;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap bitmap) {
+            super.onPostExecute(bitmap);
+
+            if (isCancelled()) {
+                bitmap = null;
+            }
+
+            ImageView imageView = imageViewReference.get();
+            if (imageView != null) {
+                if (bitmap != null) {
+                    imageView.setImageBitmap(bitmap);
+                }
+                else {
+                    Drawable placeholder = imageView.getContext().getResources().getDrawable(R.drawable.camera, null);
+                    imageView.setImageDrawable(placeholder);
+                }
+            }
+        }
+    }
+
+    public static class MyOnTouchListener implements View.OnTouchListener {
 
         static final int NONE = 0;
         static final int DRAG = 1;
@@ -88,7 +154,14 @@ class PictShowPagerAdapter extends PagerAdapter {
         float limitX = 0, limitY = 0;
         float imageWidth = 0, imageHeight = 0;
 
+        //Интерфейс для управления прокруткой ViewPagera
+        static StopVPScrolling vpScrollStop;
+
         MyOnTouchListener() {}
+
+        public interface StopVPScrolling {
+            void setPagingEnabled(boolean enabled);
+        }
 
         @Override
         public boolean onTouch(@NotNull View v, @NotNull MotionEvent event) {
@@ -139,10 +212,10 @@ class PictShowPagerAdapter extends PagerAdapter {
                         if ((xToMove + imageWidth * scaleX) < limitX && imageWidth * scaleX >= limitX) { xToMove = limitX - imageWidth * scaleX; }
 
 
-                        if ( imageWidth * scaleX <= limitX ) { xToMove = (int)(limitX - imageWidth * scaleX) / 2; }
+                        if ( imageWidth * scaleX <= limitX ) { xToMove = (int)((limitX - imageWidth * scaleX) / 2); }
                         //if ( imageWidth * scaleX > limitX && xToMove > 0 ) { xToMove = 0; }
 
-                        if ( imageHeight * scaleY <= limitY ) { yToMove = (int)(limitY - imageHeight * scaleY) / 2; }
+                        if ( imageHeight * scaleY <= limitY ) { yToMove = (int)((limitY - imageHeight * scaleY) / 2); }
                         //if ( imageHeight * scaleY > limitY && yToMove > 0) { yToMove = 0; }
 
                         //if ((xToMove + imageWidth * scaleX) < limitX) { xToMove = (int)(limitX - imageWidth * scaleX) / 2; }
@@ -153,6 +226,14 @@ class PictShowPagerAdapter extends PagerAdapter {
                         vvv.preScale(scaleX, scaleY);
 
                         iView.setImageMatrix(vvv);
+
+                        //Даём команду ViewPager
+                        if (xToMove > -5 || (( xToMove + scaleX * imageWidth - limitX) < 5 ) ) {
+                            vpScrollStop.setPagingEnabled(true);
+                        }
+                        else
+                            vpScrollStop.setPagingEnabled(false);
+
                     }
                     else if (mode == ZOOM) {
                         secondFingerMove.x = event.getX(0) - event.getX(1);
@@ -221,12 +302,21 @@ class PictShowPagerAdapter extends PagerAdapter {
                             if (zoomScale < 1) {
                                 float photoMiddleY = beginScaleY * zoomScale * innerImageHeight / 2 + finalY;
                                 if (photoMiddleY < limitY / 2) {
+
                                     float deltaY = finalY - beginY;
-                                    finalY = finalY + 1.5f * deltaY;
+
+                                    if ( (limitY / 2 - photoMiddleY) > 2 * deltaY )
+                                        finalY = finalY + deltaY;
+                                    else
+                                        finalY = finalY + limitY / 2 - photoMiddleY;
                                 }
                                 else {
                                     float deltaY = finalY - beginY;
-                                    finalY = finalY - 0.5f * deltaY;
+
+                                    if ( (photoMiddleY - limitY / 2) > 2 * deltaY )
+                                        finalY = finalY - deltaY;
+                                    else
+                                        finalY = finalY - (photoMiddleY - limitY / 2);
                                 }
                             }
 
@@ -234,11 +324,19 @@ class PictShowPagerAdapter extends PagerAdapter {
                                 float photoMiddleX = beginScaleX * zoomScale * innerImageWidth / 2 + finalX;
                                 if (photoMiddleX < limitX / 2) {
                                     float deltaX = finalX - beginX;
-                                    finalX = finalX + 1.5f * deltaX;
+
+                                    if ( (limitX / 2 - photoMiddleX) > 2 * deltaX )
+                                        finalX = finalX + deltaX;
+                                    else
+                                        finalX = finalX + limitX / 2 - photoMiddleX;
                                 }
                                 else {
                                     float deltaX = finalX - beginX;
-                                    finalX = finalX - 0.5f * deltaX;
+
+                                    if ( (photoMiddleX - limitX / 2) > 2 * deltaX )
+                                        finalX = finalX - deltaX;
+                                    else
+                                        finalX = finalX - (photoMiddleX - limitX / 2);
                                 }
                             }
 

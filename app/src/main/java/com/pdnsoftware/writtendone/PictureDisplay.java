@@ -6,21 +6,21 @@ import android.content.Intent;
 import android.database.sqlite.SQLiteException;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
+import android.support.annotation.NonNull;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.GestureDetector;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.Toast;
-
 import java.io.File;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,13 +40,8 @@ public class PictureDisplay extends AppCompatActivity {
 
     private List<File> picturesToShow;
     private List<PictureRecord> pictRecs;
-    private static ViewPager vp;
-
-    private Bundle iVSizes = new Bundle();
-    private Bundle iVPositions = new Bundle();
-
-    private static final String SIZES = "Sizes";
-    private static final String POSITIONS = "Positions";
+    //private ViewPager vp;
+    private FreezeViewPager vp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,7 +94,9 @@ public class PictureDisplay extends AppCompatActivity {
         vp = findViewById(R.id.picture_view_pager);
         //set the adapter that will create the individual pages
 
-        vp.setAdapter(new PictShowPagerAdapter(picturesToShow));
+        PictShowPagerAdapter currAdapter = new PictShowPagerAdapter(picturesToShow);
+
+        vp.setAdapter(currAdapter);
 
         DepthTransformation depthTransformation = new DepthTransformation();
 
@@ -109,6 +106,8 @@ public class PictureDisplay extends AppCompatActivity {
         vp.addOnPageChangeListener(pictSlide);
 
         vp.setCurrentItem(selectedItem);
+
+        PictShowPagerAdapter.MyOnTouchListener.vpScrollStop = vp;
 
         if (currActionBar != null)
             currActionBar.setTitle(Integer.toString(selectedItem + 1).concat(getResources().getString(R.string.pictFromPict)).concat(Integer.toString(picturesToShow.size())));
@@ -218,7 +217,7 @@ public class PictureDisplay extends AppCompatActivity {
             if (vp != null) {
 
                 //Запускаем асинхронную загрузку картинок
-                new AsynkPhotoLoader(vp).execute(picturesToShow.get(i));
+
 
                 //Сохраняем параметры предыдущих экранов
                 if (vp.getChildCount() > 0) {
@@ -227,45 +226,23 @@ public class PictureDisplay extends AppCompatActivity {
 
                     if (v != null) {
                         ImageView iV = v.findViewById(R.id.showPicture);
-
-                        int[] iVWidthHeight = {iV.getWidth(), iV.getHeight()};
-                        iVSizes.putIntArray(SIZES + Integer.toString(i), iVWidthHeight);
-
-                        float[] iVXY = {iV.getX(), iV.getY()};
-                        iVPositions.putFloatArray(POSITIONS + Integer.toString(i), iVXY);
+                        iV.setScaleType(ImageView.ScaleType.FIT_CENTER);
                     }
 
                     //Восстанавливаем значения меньшего
-                    if (iVSizes.containsKey(SIZES + Integer.toString(i-1)) && vp.findViewWithTag(vp.getCurrentItem() - 1) != null) {
+                    if (vp.findViewWithTag(vp.getCurrentItem() - 1) != null) {
                         View prevView = vp.findViewWithTag(vp.getCurrentItem() - 1);
                         ImageView prevIV = prevView.findViewById(R.id.showPicture);
+                        prevIV.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
-                        int[] previVWidthHeight = iVSizes.getIntArray(SIZES + Integer.toString(i-1));
-                        if (previVWidthHeight != null) {
-                            prevIV.getLayoutParams().height = previVWidthHeight[1];
-                            prevIV.getLayoutParams().width = previVWidthHeight[0];
-                            prevIV.requestLayout();
-                        }
-
-                        if (iVPositions.containsKey(POSITIONS + Integer.toString(i-1))) {
-                            float[] previVXY = iVPositions.getFloatArray(POSITIONS + Integer.toString(i-1));
-                            if (previVXY != null) {
-                                prevIV.setX(previVXY[0]);
-                                prevIV.setY(previVXY[1]);
-                            }
-                        }
                     }
 
                     //Восстанавливаем значения старшего
-                    if (iVSizes.containsKey(SIZES + Integer.toString(i+1)) && vp.findViewWithTag(vp.getCurrentItem() + 1) != null) {
+                    if (vp.findViewWithTag(vp.getCurrentItem() + 1) != null) {
                         View nextView = vp.findViewWithTag(vp.getCurrentItem() + 1);
                         ImageView nextIV = nextView.findViewById(R.id.showPicture);
-                        int[] nextiVWidthHeight = iVSizes.getIntArray(SIZES + Integer.toString(i+1));
-                        if (nextiVWidthHeight != null) {
-                            nextIV.getLayoutParams().height = nextiVWidthHeight[1];
-                            nextIV.getLayoutParams().width = nextiVWidthHeight[0];
-                            nextIV.requestLayout();
-                        }
+                        nextIV.setScaleType(ImageView.ScaleType.FIT_CENTER);
+
                     }
                 }
             }
@@ -295,57 +272,11 @@ public class PictureDisplay extends AppCompatActivity {
         }
     }
 
-    //Класс для асинхронной загрузки фотографий
-    private static class AsynkPhotoLoader extends AsyncTask<File, Void, Bitmap> {
-
-        ViewPager innerVP;
-
-        AsynkPhotoLoader(ViewPager mVP) { this.innerVP = mVP; }
-
-        protected Bitmap doInBackground(File... pictToLoad) {
-            File fileToLoad = pictToLoad[0];
-
-            BitmapFactory.Options options = new BitmapFactory.Options();
-            options.inSampleSize = 1;
-
-            Bitmap pictToReturn;
-
-            //****************Поворачиваем фото, если надо****************************
-            try {
-                android.support.media.ExifInterface exifObject =
-                        new android.support.media.ExifInterface(fileToLoad.getAbsolutePath());
-
-                int orientation = exifObject.getAttributeInt(android.support.media.ExifInterface.TAG_ORIENTATION,
-                        android.support.media.ExifInterface.ORIENTATION_UNDEFINED);
-
-                pictToReturn = ScriptEdit.rotateBitmap(BitmapFactory.decodeFile(fileToLoad.getAbsolutePath(),
-                        options), orientation);
-
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-                pictToReturn = BitmapFactory.decodeFile(fileToLoad.getAbsolutePath(), options);
-            }
-
-            return pictToReturn;
-        }
-
-        @Override
-        protected void onPostExecute(Bitmap bitmap) {
-            super.onPostExecute(bitmap);
-
-            View v = innerVP.findViewWithTag(innerVP.getCurrentItem());
-            if (v != null) {
-                ((ImageView)v.findViewById(R.id.showPicture)).setImageBitmap(bitmap);
-            }
-        }
-    }
-
     //Трансформация картинок в ViewPagerе
 
     public class DepthTransformation implements ViewPager.PageTransformer{
         @Override
-        public void transformPage(View page, float position) {
+        public void transformPage(@NonNull View page, float position) {
 
             if (position < -1){    // [-Infinity,-1)
                 // This page is way off-screen to the left.
