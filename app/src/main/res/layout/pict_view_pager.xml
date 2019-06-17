@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:orientation="horizontal">
 
-    <ImageView
+    <com.pdnsoftware.writtendone.ExtendedImageView
         android:id="@+id/showPicture"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

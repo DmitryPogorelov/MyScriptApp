@@ -33,7 +33,6 @@
     <string name="fileNotCopied">Failed to copy the file!</string>
     <string name="errorPicturesDirCreated">Unable to create directory for pictures!</string>
     <string name="errorThumbnailsDirCreated">Unable to create directory for thumbnails!</string>
-    <string name="errorPictureDel">Error occurred during picture delete!</string>
     <string name="errorCameraNotFound">Camera not found!</string>
 
     //Строки меню главного экрана

@@ -16,9 +16,19 @@ public class FreezeViewPager extends ViewPager implements PictShowPagerAdapter.M
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (this.enabled) {
-            return super.onTouchEvent(event);
-        }
 
+            super.onTouchEvent(event);
+
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    return true;
+
+                case MotionEvent.ACTION_UP:
+                    performClick();
+                    return true;
+            }
+
+        }
         return false;
     }
 
@@ -33,5 +43,11 @@ public class FreezeViewPager extends ViewPager implements PictShowPagerAdapter.M
 
     public void setPagingEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    @Override
+    public boolean performClick() {
+        super.performClick();
+        return true;
     }
 }

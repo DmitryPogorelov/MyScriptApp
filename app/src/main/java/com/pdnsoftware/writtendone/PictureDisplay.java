@@ -4,9 +4,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.sqlite.SQLiteException;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewPager;
@@ -19,8 +16,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageView;
 import java.io.File;
-import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -225,14 +220,14 @@ public class PictureDisplay extends AppCompatActivity {
                     View v = vp.findViewWithTag(vp.getCurrentItem());
 
                     if (v != null) {
-                        ImageView iV = v.findViewById(R.id.showPicture);
+                        ExtendedImageView iV = v.findViewById(R.id.showPicture);
                         iV.setScaleType(ImageView.ScaleType.FIT_CENTER);
                     }
 
                     //Восстанавливаем значения меньшего
                     if (vp.findViewWithTag(vp.getCurrentItem() - 1) != null) {
                         View prevView = vp.findViewWithTag(vp.getCurrentItem() - 1);
-                        ImageView prevIV = prevView.findViewById(R.id.showPicture);
+                        ExtendedImageView prevIV = prevView.findViewById(R.id.showPicture);
                         prevIV.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
                     }
@@ -240,7 +235,7 @@ public class PictureDisplay extends AppCompatActivity {
                     //Восстанавливаем значения старшего
                     if (vp.findViewWithTag(vp.getCurrentItem() + 1) != null) {
                         View nextView = vp.findViewWithTag(vp.getCurrentItem() + 1);
-                        ImageView nextIV = nextView.findViewById(R.id.showPicture);
+                        ExtendedImageView nextIV = nextView.findViewById(R.id.showPicture);
                         nextIV.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
                     }
@@ -256,7 +251,7 @@ public class PictureDisplay extends AppCompatActivity {
     //Асинхронная задача для удаления фотографии
     private static class DeletePictureTask extends AsyncTask<Integer, Void, Boolean> {
 
-        MyScriptDBManager innerDBManager;
+        final MyScriptDBManager innerDBManager;
 
         DeletePictureTask(MyScriptDBManager dbManager) {
             this.innerDBManager = dbManager;
@@ -274,7 +269,7 @@ public class PictureDisplay extends AppCompatActivity {
 
     //Трансформация картинок в ViewPagerе
 
-    public class DepthTransformation implements ViewPager.PageTransformer{
+    class DepthTransformation implements ViewPager.PageTransformer{
         @Override
         public void transformPage(@NonNull View page, float position) {
 

@@ -42,11 +42,12 @@ class PictShowPagerAdapter extends PagerAdapter {
 
         page.setTag(position);
 
-        ImageView iView = page.findViewById(R.id.showPicture);
+        ExtendedImageView iView = page.findViewById(R.id.showPicture);
 
         new AsynkPhotoLoader(iView).execute(pictList.get(position));
 
         iView.setOnTouchListener(new MyOnTouchListener());
+
         iView.setScaleType(ImageView.ScaleType.FIT_CENTER);
 
         //Add the page to the front of the queue
@@ -62,15 +63,15 @@ class PictShowPagerAdapter extends PagerAdapter {
     @Override
     public void destroyItem(@NotNull ViewGroup container, int position, @NotNull Object object) {
         container.removeView((View) object);
-        object=null;
+        object = null;
     }
 
     //Класс для асинхронной загрузки фотографий
     private static class AsynkPhotoLoader extends AsyncTask<File, Void, Bitmap> {
 
-        private final WeakReference<ImageView> imageViewReference;
+        private final WeakReference<ExtendedImageView> imageViewReference;
 
-        AsynkPhotoLoader(ImageView imageView) {
+        AsynkPhotoLoader(ExtendedImageView imageView) {
             this.imageViewReference = new WeakReference<>(imageView);
         }
 
@@ -110,7 +111,7 @@ class PictShowPagerAdapter extends PagerAdapter {
                 bitmap = null;
             }
 
-            ImageView imageView = imageViewReference.get();
+            ExtendedImageView imageView = imageViewReference.get();
             if (imageView != null) {
                 if (bitmap != null) {
                     imageView.setImageBitmap(bitmap);
@@ -123,6 +124,7 @@ class PictShowPagerAdapter extends PagerAdapter {
         }
     }
 
+    //Этот класс реализует обработку движений палцев
     public static class MyOnTouchListener implements View.OnTouchListener {
 
         static final int NONE = 0;
@@ -134,14 +136,14 @@ class PictShowPagerAdapter extends PagerAdapter {
 
         int mode = NONE;
 
-        PointF start = new PointF();
-        PointF secondFingerDown = new PointF();
-        PointF secondFingerMove = new PointF();
-        PointF midPoint = new PointF();
+        final PointF start = new PointF();
+        final PointF secondFingerDown = new PointF();
+        final PointF secondFingerMove = new PointF();
+        final PointF midPoint = new PointF();
 
         Matrix currMatrix = new Matrix();
-        Matrix matrix = new Matrix();
-        float[] currCoords = {0, 0, 0, 0, 0, 0, 0, 0, 0};
+        final Matrix matrix = new Matrix();
+        final float[] currCoords = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
         float scaleX = 1;
         float scaleY = 1;
@@ -166,10 +168,7 @@ class PictShowPagerAdapter extends PagerAdapter {
         @Override
         public boolean onTouch(@NotNull View v, @NotNull MotionEvent event) {
 
-            v.performClick();
-            //Zoom
-
-            ImageView iView = (ImageView) v;
+            ExtendedImageView iView = (ExtendedImageView) v;
             iView.setScaleType(ImageView.ScaleType.MATRIX);
 
             limitX = iView.getMeasuredWidth();
@@ -211,15 +210,9 @@ class PictShowPagerAdapter extends PagerAdapter {
                         if (xToMove > 0 && imageWidth * scaleX >= limitX) { xToMove = 0; }
                         if ((xToMove + imageWidth * scaleX) < limitX && imageWidth * scaleX >= limitX) { xToMove = limitX - imageWidth * scaleX; }
 
-
                         if ( imageWidth * scaleX <= limitX ) { xToMove = (int)((limitX - imageWidth * scaleX) / 2); }
-                        //if ( imageWidth * scaleX > limitX && xToMove > 0 ) { xToMove = 0; }
 
                         if ( imageHeight * scaleY <= limitY ) { yToMove = (int)((limitY - imageHeight * scaleY) / 2); }
-                        //if ( imageHeight * scaleY > limitY && yToMove > 0) { yToMove = 0; }
-
-                        //if ((xToMove + imageWidth * scaleX) < limitX) { xToMove = (int)(limitX - imageWidth * scaleX) / 2; }
-                        //if ((yToMove + imageHeight * scaleY) < limitY) { yToMove = (int)(limitY - imageHeight * scaleY) / 2; }
 
                         Matrix vvv = new Matrix();
                         vvv.setTranslate(xToMove, yToMove);
@@ -227,12 +220,13 @@ class PictShowPagerAdapter extends PagerAdapter {
 
                         iView.setImageMatrix(vvv);
 
-                        //Даём команду ViewPager
+                        //**************************************************************************
+                        //Даём команду ViewPager перестать прокручивать страницы при свайпе*********
+                        //**************************************************************************
                         if (xToMove > -5 || (( xToMove + scaleX * imageWidth - limitX) < 5 ) ) {
                             vpScrollStop.setPagingEnabled(true);
                         }
-                        else
-                            vpScrollStop.setPagingEnabled(false);
+                        else { vpScrollStop.setPagingEnabled(false); }
 
                     }
                     else if (mode == ZOOM) {
@@ -270,21 +264,15 @@ class PictShowPagerAdapter extends PagerAdapter {
                             float beginScaleX = click[0];
                             float beginScaleY = click[4];
 
-                            //Вычисляем финальный коэффициент масштабирования
+                            //**********************************************************************
+                            //Вычисляем финальный коэффициент масштабирования  с учетом ограничений*
+                            //**********************************************************************
                             if (beginScaleX * zoomScale * innerImageWidth >= ZOOM_MAX * limitX) {
                                 zoomScale = (ZOOM_MAX  * limitX)/ (beginScaleX * innerImageWidth);
                             }
                             if (beginScaleY * zoomScale * innerImageHeight >= ZOOM_MAX * limitY) {
                                 zoomScale = (ZOOM_MAX * limitY) / (beginScaleY * innerImageHeight);
                             }
-
-                       /*     if ((innerImageWidth >= innerImageHeight) && (beginScaleX * zoomScale * innerImageWidth <= ZOOM_MIN * limitX)) {
-                                zoomScale = (ZOOM_MIN  * limitX)/ (beginScaleX * innerImageWidth);
-                            }
-
-                            if ((innerImageWidth < innerImageHeight) && (beginScaleY * zoomScale * innerImageHeight <= ZOOM_MIN * limitY)) {
-                                zoomScale = (ZOOM_MIN * limitY) / (beginScaleY * innerImageHeight);
-                            } */
 
                             if (( limitX / innerImageWidth ) < ( limitY / innerImageHeight ) ) {
                                 if (beginScaleX * zoomScale * innerImageWidth <= ZOOM_MIN * limitX)
@@ -294,49 +282,52 @@ class PictShowPagerAdapter extends PagerAdapter {
                                 if (beginScaleY * zoomScale * innerImageHeight <= ZOOM_MIN * limitY)
                                     zoomScale = (ZOOM_MIN * limitY) / (beginScaleY * innerImageHeight);
                             }
+                            //**********************************************************************
+                            //Финальный коэффициент масштабирования с учетом ограничений вычислен***
+                            //**********************************************************************
 
+                            //**********************************************************************
+                            //Вычисляем сдвиг по X и Y, чтобы масштабирование выглядело равномерным*
+                            //**********************************************************************
                             float finalX = midPoint.x - (midPoint.x - beginX) * zoomScale;
                             float finalY = midPoint.y - (midPoint.y - beginY) * zoomScale;
+                            //**********************************************************************
+                            //Сдвиг по X и Y, чтобы масштабирование выглядело равномерным, вычислен*
+                            //**********************************************************************
+
+                            //**********************************************************************
+                            // Если ни одна из сторон картинки ны выходит за границы зоны просмотра,
+                            // то просто сжимаем ее
+                            //**********************************************************************
 
                             //Ищем середину фотки
-                            if (zoomScale < 1) {
+                            if (zoomScale < 1 && ( (beginScaleY * zoomScale * innerImageHeight <= limitY) || (finalY >= 0)  ) ) {
                                 float photoMiddleY = beginScaleY * zoomScale * innerImageHeight / 2 + finalY;
+                                float deltaY = finalY - beginY;
+
                                 if (photoMiddleY < limitY / 2) {
-
-                                    float deltaY = finalY - beginY;
-
-                                    if ( (limitY / 2 - photoMiddleY) > 2 * deltaY )
-                                        finalY = finalY + deltaY;
-                                    else
-                                        finalY = finalY + limitY / 2 - photoMiddleY;
+                                    if ( (limitY / 2 - photoMiddleY) > 2 * deltaY ) { finalY = finalY + deltaY; }
+                                    else { finalY = finalY + limitY / 2 - photoMiddleY; }
                                 }
                                 else {
-                                    float deltaY = finalY - beginY;
-
-                                    if ( (photoMiddleY - limitY / 2) > 2 * deltaY )
-                                        finalY = finalY - deltaY;
-                                    else
-                                        finalY = finalY - (photoMiddleY - limitY / 2);
+                                    if ( (photoMiddleY - limitY / 2) > 2 * deltaY ) { finalY = finalY - deltaY; }
+                                    else { finalY = finalY - (photoMiddleY - limitY / 2); }
                                 }
                             }
 
-                            if (zoomScale < 1) {
+                            if (zoomScale < 1 && ( (beginScaleX * zoomScale * innerImageWidth <= limitX) || (finalX >= 0)  ) ) {
                                 float photoMiddleX = beginScaleX * zoomScale * innerImageWidth / 2 + finalX;
-                                if (photoMiddleX < limitX / 2) {
-                                    float deltaX = finalX - beginX;
+                                float deltaX = finalX - beginX;
 
-                                    if ( (limitX / 2 - photoMiddleX) > 2 * deltaX )
-                                        finalX = finalX + deltaX;
-                                    else
-                                        finalX = finalX + limitX / 2 - photoMiddleX;
+                                if (photoMiddleX < limitX / 2) {
+
+                                    if ( (limitX / 2 - photoMiddleX) > 2 * deltaX ) { finalX = finalX + deltaX; }
+                                    else { finalX = finalX + limitX / 2 - photoMiddleX; }
                                 }
                                 else {
-                                    float deltaX = finalX - beginX;
 
-                                    if ( (photoMiddleX - limitX / 2) > 2 * deltaX )
-                                        finalX = finalX - deltaX;
-                                    else
-                                        finalX = finalX - (photoMiddleX - limitX / 2);
+                                    if ( (photoMiddleX - limitX / 2) > 2 * deltaX ) { finalX = finalX - deltaX; }
+                                    else { finalX = finalX - (photoMiddleX - limitX / 2); }
                                 }
                             }
 
@@ -347,14 +338,6 @@ class PictShowPagerAdapter extends PagerAdapter {
                             if ( (beginScaleY * zoomScale * innerImageHeight <= limitY) ) {
                                 finalY = (limitY / 2) - (beginScaleY * zoomScale * innerImageHeight / 2);
                             }
-
-/*                            //Проверяем начальные координаты на правильность
-                            if ((innerImageWidth >= innerImageHeight) && (finalX > 0)) {
-                                finalX = 0;
-                            }
-                            if ((innerImageWidth < innerImageHeight) && (finalY > 0)) {
-                                finalY = 0;
-                            }*/
 
                             if ((beginScaleX * zoomScale * innerImageWidth > limitX) && (beginScaleY * zoomScale * innerImageHeight > limitY)) {
                                 if (finalX > 0) { finalX = 0; }
@@ -383,12 +366,12 @@ class PictShowPagerAdapter extends PagerAdapter {
                             matrix.postTranslate(finalX, finalY);
                             iView.setScaleType(ImageView.ScaleType.MATRIX);
                             iView.setImageMatrix(matrix);
-
                         }
-
                     }
                     break;
                 case MotionEvent.ACTION_UP:
+                    v.performClick();
+                    return true;
                 case MotionEvent.ACTION_POINTER_UP:
                     mode = NONE;
                     break;
